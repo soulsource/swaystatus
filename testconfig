@@ -1,0 +1,9 @@
+[Settings]
+separator = ", "
+
+[[Elements]]
+Plugin = "ClockPlugin"
+
+[Elements.Config]
+Format = "%R"
+RefreshRate = 1.0
