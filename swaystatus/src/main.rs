@@ -3,6 +3,7 @@ mod config;
 mod plugin_database;
 mod communication;
 mod signalhandler;
+mod commandline;
 
 extern crate gettextrs;
 use gettextrs::*;
@@ -16,22 +17,28 @@ fn main() {
     if let Err(_e) = TextDomain::new("swaystatus").prepend("target").init() {
         eprintln!("Localization could not be loaded. Will use English instead.");
     }
-    //TODO: Read those from command line
-    let plugin_path = std::path::Path::new("/home/andi/Dokumente/Rust-Projects/swaystatus/target/debug/");
-    let config_path = std::path::Path::new("/home/andi/Dokumente/Rust-Projects/swaystatus/testconfig"); 
-    while !core_loop(plugin_path, config_path) {}
+    let commandline_parameters = commandline::parse_commandline();
+    while !core_loop(&commandline_parameters.plugin_folder, &commandline_parameters.config_file, commandline_parameters.print_sample_config) {}
 }
 
 /// Actually the main() function. Factored out so we can restart without actually restaring.
 /// Because some people might expect that SIGHUP triggers a reload, and it's trivial to implement.
-fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> bool {
+fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path, print_config : bool) -> bool {
     //Read plugins first (needed for config deserialization, given the config files has
     //plugin config as well...
-    let libraries = plugin_database::Libraries::load_from_folder(plugin_path).unwrap();
+    let libraries = match plugin_database::Libraries::load_from_folder(plugin_path) {
+        Ok(x) => x,
+        Err(e) => {
+            eprintln!("{} {}", gettext!("Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:", plugin_path.display()), e);
+            return true;
+        }
+    };
     let plugins = plugin_database::PluginDatabase::new(&libraries); 
 
-    //TODO: Remove once command line handling is implemented.
-    //config::SwaystatusConfig::print_sample_config(&plugins);
+    if print_config {
+        config::SwaystatusConfig::print_sample_config(&plugins);
+        return true;
+    }
 
 
     let (elements, main_config) = match config::SwaystatusConfig::read_config(config_path, &plugins) {
@@ -99,7 +106,8 @@ fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> 
         //print a general error here.
         eprintln!("{}", gettext("At least one of the plugins panicked. For details please check the (hopefully existing) previous error messages."));
     }
-    return !should_restart;
+
+    !should_restart
 }
 
 //-----------------------------------------------------------------------------
