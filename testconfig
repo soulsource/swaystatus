@@ -6,4 +6,4 @@ Plugin = "ClockPlugin"
 
 [Elements.Config]
 Format = "%R"
-RefreshRate = 1.0
+RefreshRate = 3.0

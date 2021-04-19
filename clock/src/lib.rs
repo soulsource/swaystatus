@@ -9,12 +9,45 @@ pub struct ClockRunnable<'c> {
     to_main : Box<dyn MsgModuleToMain +'c>
 }
 
+impl<'c> ClockRunnable<'c> {
+    fn print_current_time_with_format(&self) -> String {
+        let now = chrono::offset::Local::now();
+        now.format(&self.config.format).to_string()
+    }
+    fn simple_loop(&self) {
+        loop {
+            self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
+            match self.from_main.recv_timeout(std::time::Duration::from_secs_f32(self.config.refresh_rate)) {
+                Ok(MessagesFromMain::Refresh) | Err(RecvTimeoutError::Timeout) => {},
+                Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
+            }
+        }
+    }
+
+    fn synchronized_loop(&self, second_fraction : u32) {
+        //TODO: implement...
+        self.simple_loop();
+    }
+}
+
 impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
     fn run(&self) {
-        for i in 0..4 {
-            println!("Sending Error {}",i);
-            self.to_main.send_update(Err(PluginError::PrintToStdErr(format!("Hello {}", i)))).unwrap();
-            std::thread::sleep(std::time::Duration::from_secs(2));
+        //there are two modes of operation for this module.
+        //Which one is used depends entirely on the interval
+        //If the interval or its inverse is a full multiple of
+        //a second, we use the "synchronized" variant, which
+        //aims at ticking approximately at the full second.
+        //Otherwise we just loop.
+        let frac_part = self.config.refresh_rate.fract();
+        let inverse_frac_part = self.config.refresh_rate.recip().fract();
+        if frac_part.abs() > 1e-3 && inverse_frac_part.abs() > 1e-3 {
+            self.simple_loop();
+        }
+        else if frac_part.abs() <= 1e-3 {
+            self.synchronized_loop(1);
+        }
+        else {
+            self.synchronized_loop(self.config.refresh_rate.recip().trunc().abs() as u32);
         }
     }
 }
