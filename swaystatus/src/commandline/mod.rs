@@ -12,10 +12,23 @@ pub struct CommandlineParameters {
 
 /// Gets the config and plugin paths. Either from command line or from hardcoded defaults.
 pub fn parse_commandline() -> CommandlineParameters {
+    //needed for lifetime reasons...
     let matches = App::new(crate_name!())
         .version(crate_version!())
         .author(crate_authors!())
         .about(&*gettext("A simple status text app, inspired by i3status"))
+        .arg(
+            Arg::new("help")
+            .short('h')
+            .long("help")
+            .about(&*gettext("Prints help information."))
+            .global(true))
+        .arg(
+            Arg::new("version")
+            .short('v')
+            .long("version")
+            .about(&*gettext("Prints version information."))
+            .global(true))
         .arg(
             Arg::new("config")
             .short('c')
