@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: swaystatus 0.1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-15 07:42+0000\n"
+"Report-Msgid-Bugs-To: dragon.arises@gmail.com\n"
+"POT-Creation-Date: 2021-04-19 06:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,4 +39,101 @@ msgstr ""
 
 #: src/plugin_database/mod.rs:64
 msgid "Failed to load as library: {}"
+msgstr ""
+
+#: src/communication/mod.rs:42
+msgid "I, element {}, tried to inform the main thread that I crashed. However the main thread isn't listening any more. This should be impossible, but well... Also, it's not critical enough to halt the whole program..."
+msgstr ""
+
+#: src/signalhandler/mod.rs:19
+msgid "Failed to register signal handler. Since without signal handler there's no proper way to cleanly exit any plugins, we bail now."
+msgstr ""
+
+#: src/signalhandler/mod.rs:34
+msgid "Message handler failed to send a message to main thread. This is supposed to be impossible. In any case it's a critical error."
+msgstr ""
+
+#: src/commandline/mod.rs:18
+msgid "A simple status text app, inspired by i3status"
+msgstr ""
+
+#: src/commandline/mod.rs:19
+msgid "Arguments"
+msgstr ""
+
+#: src/commandline/mod.rs:24
+msgid "FILE"
+msgstr ""
+
+#: src/commandline/mod.rs:25
+msgid "Path to the configuration file"
+msgstr ""
+
+#: src/commandline/mod.rs:31
+msgid "FOLDER"
+msgstr ""
+
+#: src/commandline/mod.rs:32
+msgid "Directory from which the plugins should be loaded"
+msgstr ""
+
+#: src/commandline/mod.rs:37
+msgid "Prints a sample config file. Beware that the contents of the sample file depend on the loaded plugins, so don't forget to supply the plugins parameter as needed."
+msgstr ""
+
+#: src/commandline/mod.rs:39
+msgid "If no config path is given, the code looks for the \"swaystatus/config\" file in your XDG config folder (typically \"$HOME/.config/\"). If that lookup fails, loading of \"/etc/swaystatus/config\" is attempted. Similarly, if no plugin folder is given, first the existence of a folder named \"$HOME/.local/lib/swaystatus\" is checked. If this folder does not exist, a default path set at compile time is used, which in your case is \"{}\"."
+msgstr ""
+
+#: src/commandline/mod.rs:40
+msgid "{before-help}{bin} {version}\n"
+"{author-section}{about-section}\n"
+"USAGE\n"
+"    {usage}\n"
+"\n"
+"{all-args}{after-help}"
+msgstr ""
+
+#: src/main.rs:32
+msgid "Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:"
+msgstr ""
+
+#: src/main.rs:50
+msgid "No elements set up in configuration. Nothing to display."
+msgstr ""
+
+#. unwinding across plugin boundaries is a _bad_ idea. Unless we want our core dumped, that
+#. is. The documentation only mentions that unwinding across C functions doesn't work, but
+#. that seems to also be true for dynamically loaded Rust libs... That's why we can only
+#. print a general error here.
+#: src/main.rs:107
+msgid "At least one of the plugins panicked. For details please check the (hopefully existing) previous error messages."
+msgstr ""
+
+#: src/main.rs:119
+msgid "The configuration file could not be read. Nothing to do."
+msgstr ""
+
+#: src/main.rs:122
+msgid "The parser for the config file returned an error: {}"
+msgstr ""
+
+#: src/main.rs:132
+msgid "Tried to tell a plugin to quit, but that plugin seems to no longer listen to messages. Either that plugin has already terminated, or it's stuck. In the latter case a clean exit is impossible, you'll need to kill this process. The offending element is element number {} from plugin {}."
+msgstr ""
+
+#: src/main.rs:139
+msgid "Tried to tell a plugin to refresh, but it doesn't listen any more. Either the plugin already terminated, or it is stuck. The offending element is element number {} from plugin {}."
+msgstr ""
+
+#: src/main.rs:150 src/main.rs:152
+msgid "Element number {} (plugin: {}) sent an error message: {}"
+msgstr ""
+
+#: src/main.rs:169
+msgid "<plugin crashed>"
+msgstr ""
+
+#: src/main.rs:170
+msgid "The plugin {} crashed while displaying element number {}. Please see the plugin's panic message above for details."
 msgstr ""
