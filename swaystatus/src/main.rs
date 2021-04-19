@@ -9,12 +9,17 @@ extern crate gettextrs;
 use gettextrs::*;
 use crossbeam_utils::thread;
 use std::sync::mpsc;
+use dirs;
 
 #[cfg(test)]
 pub mod test_plugin;
 
 fn main() {
-    if let Err(_e) = TextDomain::new("swaystatus").prepend("target").init() {
+    let text_domain = match dirs::data_dir() {
+        Some (p) => TextDomain::new("swaystatus").prepend("target").push(p),
+        None => TextDomain::new("swaystatus").prepend("target")
+    };
+    if let Err(_e) = text_domain.init() {
         eprintln!("Localization could not be loaded. Will use English instead.");
     }
     let commandline_parameters = commandline::parse_commandline();

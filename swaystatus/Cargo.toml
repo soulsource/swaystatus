@@ -9,7 +9,7 @@ description = "Fully modular status bar text updater, similar to i3bar."
 
 [dependencies]
 crossbeam-utils = "0.8"
-gettext-rs = "0.6.0"
+gettext-rs = { version = "0.6.0", features = ["gettext-system"] }
 serde = { version = "1.0", features = ["derive"] }
 erased-serde = "0.3"
 toml = "0.5"
