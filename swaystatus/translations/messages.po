@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Andreas Grois
-# This file is distributed under the same license as the swaystatus package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: swaystatus 0.1.0\n"
-"Report-Msgid-Bugs-To: dragon.arises@gmail.com\n"
-"POT-Creation-Date: 2021-04-19 06:01+0000\n"
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-04-19 18:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -57,48 +57,52 @@ msgstr ""
 msgid "A simple status text app, inspired by i3status"
 msgstr ""
 
-#: src/commandline/mod.rs:19
-msgid "Arguments"
-msgstr ""
-
-#: src/commandline/mod.rs:24
+#: src/commandline/mod.rs:23
 msgid "FILE"
 msgstr ""
 
-#: src/commandline/mod.rs:25
+#: src/commandline/mod.rs:24
 msgid "Path to the configuration file"
 msgstr ""
 
-#: src/commandline/mod.rs:31
+#: src/commandline/mod.rs:30
 msgid "FOLDER"
 msgstr ""
 
-#: src/commandline/mod.rs:32
+#: src/commandline/mod.rs:31
 msgid "Directory from which the plugins should be loaded"
 msgstr ""
 
-#: src/commandline/mod.rs:37
+#: src/commandline/mod.rs:36
 msgid "Prints a sample config file. Beware that the contents of the sample file depend on the loaded plugins, so don't forget to supply the plugins parameter as needed."
 msgstr ""
 
-#: src/commandline/mod.rs:39
+#: src/commandline/mod.rs:38
 msgid "If no config path is given, the code looks for the \"swaystatus/config\" file in your XDG config folder (typically \"$HOME/.config/\"). If that lookup fails, loading of \"/etc/swaystatus/config\" is attempted. Similarly, if no plugin folder is given, first the existence of a folder named \"$HOME/.local/lib/swaystatus\" is checked. If this folder does not exist, a default path set at compile time is used, which in your case is \"{}\"."
 msgstr ""
 
-#: src/commandline/mod.rs:40
+#: src/commandline/mod.rs:39
 msgid "{before-help}{bin} {version}\n"
-"{author-section}{about-section}\n"
+"{author}\n"
+"\n"
+"{about}\n"
 "USAGE\n"
 "    {usage}\n"
 "\n"
-"{all-args}{after-help}"
+"FLAGS:\n"
+"{flags}\n"
+"\n"
+"OPTIONS:\n"
+"{options}\n"
+"\n"
+"{after-help}"
 msgstr ""
 
-#: src/main.rs:32
+#: src/main.rs:37
 msgid "Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:"
 msgstr ""
 
-#: src/main.rs:50
+#: src/main.rs:55
 msgid "No elements set up in configuration. Nothing to display."
 msgstr ""
 
@@ -106,34 +110,34 @@ msgstr ""
 #. is. The documentation only mentions that unwinding across C functions doesn't work, but
 #. that seems to also be true for dynamically loaded Rust libs... That's why we can only
 #. print a general error here.
-#: src/main.rs:107
+#: src/main.rs:112
 msgid "At least one of the plugins panicked. For details please check the (hopefully existing) previous error messages."
 msgstr ""
 
-#: src/main.rs:119
+#: src/main.rs:124
 msgid "The configuration file could not be read. Nothing to do."
 msgstr ""
 
-#: src/main.rs:122
+#: src/main.rs:127
 msgid "The parser for the config file returned an error: {}"
 msgstr ""
 
-#: src/main.rs:132
+#: src/main.rs:137
 msgid "Tried to tell a plugin to quit, but that plugin seems to no longer listen to messages. Either that plugin has already terminated, or it's stuck. In the latter case a clean exit is impossible, you'll need to kill this process. The offending element is element number {} from plugin {}."
 msgstr ""
 
-#: src/main.rs:139
+#: src/main.rs:144
 msgid "Tried to tell a plugin to refresh, but it doesn't listen any more. Either the plugin already terminated, or it is stuck. The offending element is element number {} from plugin {}."
 msgstr ""
 
-#: src/main.rs:150 src/main.rs:152
+#: src/main.rs:155 src/main.rs:157
 msgid "Element number {} (plugin: {}) sent an error message: {}"
 msgstr ""
 
-#: src/main.rs:169
+#: src/main.rs:174
 msgid "<plugin crashed>"
 msgstr ""
 
-#: src/main.rs:170
+#: src/main.rs:175
 msgid "The plugin {} crashed while displaying element number {}. Please see the plugin's panic message above for details."
 msgstr ""

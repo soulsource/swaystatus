@@ -16,7 +16,6 @@ pub fn parse_commandline() -> CommandlineParameters {
         .version(crate_version!())
         .author(crate_authors!())
         .about(&*gettext("A simple status text app, inspired by i3status"))
-        .help_heading(&*gettext("Arguments"))
         .arg(
             Arg::new("config")
             .short('c')
@@ -39,11 +38,15 @@ pub fn parse_commandline() -> CommandlineParameters {
         .after_help(&*gettext!("If no config path is given, the code looks for the \"swaystatus/config\" file in your XDG config folder (typically \"$HOME/.config/\"). If that lookup fails, loading of \"/etc/swaystatus/config\" is attempted. Similarly, if no plugin folder is given, first the existence of a folder named \"$HOME/.local/lib/swaystatus\" is checked. If this folder does not exist, a default path set at compile time is used, which in your case is \"{}\"." , get_hardcoded_default_library_path()))
         .help_template(&*gettext("\
 {before-help}{bin} {version}\n\
-{author-section}\
-{about-section}\n\
+{author}\n
+{about}\n\
 USAGE\n    {usage}\n\
 \n\
-{all-args}{after-help}")).get_matches();
+FLAGS:
+{flags}\n
+OPTIONS:
+{options}\n
+{after-help}")).get_matches();
 
 
     let config_file = matches.value_of("config").map(path::PathBuf::from).unwrap_or_else(get_default_config);

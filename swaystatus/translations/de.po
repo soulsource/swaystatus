@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: swaystatus 0.1.0\n"
-"Report-Msgid-Bugs-To: dragon.arises@gmail.com\n"
-"POT-Creation-Date: 2021-04-19 06:01+0000\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-04-19 18:21+0000\n"
 "PO-Revision-Date: 2021-04-15 09:43+0200\n"
 "Last-Translator: Andreas Grois <andi@grois.info>\n"
 "Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
@@ -70,8 +70,8 @@ msgid ""
 msgstr ""
 "Ich, Element {}, habe versucht, dem Hauptprogramm mitzueilen, dass ich "
 "abgestürzt bin. Allerdings hört das Hauptprogramm nicht mehr zu. Das sollte "
-"eigentlich unmöglich sein, aber gut, es ist passiert... Naja, wird schon nicht "
-"so schlimm sein, dass es sinnvoll wäre das ganze Programm anzuhalten."
+"eigentlich unmöglich sein, aber gut, es ist passiert... Naja, wird schon "
+"nicht so schlimm sein, dass es sinnvoll wäre das ganze Programm anzuhalten."
 
 #: src/signalhandler/mod.rs:19
 msgid ""
@@ -94,38 +94,34 @@ msgstr ""
 msgid "A simple status text app, inspired by i3status"
 msgstr "Eine einfache Status-Text Anwendung, inspiriert durch i3status"
 
-#: src/commandline/mod.rs:19
-msgid "Arguments"
-msgstr "Argumente"
-
-#: src/commandline/mod.rs:24
+#: src/commandline/mod.rs:23
 msgid "FILE"
 msgstr "DATEI"
 
-#: src/commandline/mod.rs:25
+#: src/commandline/mod.rs:24
 msgid "Path to the configuration file"
 msgstr "Pfad zur Konfigurationsdatei"
 
-#: src/commandline/mod.rs:31
+#: src/commandline/mod.rs:30
 msgid "FOLDER"
 msgstr "ORDNER"
 
-#: src/commandline/mod.rs:32
+#: src/commandline/mod.rs:31
 msgid "Directory from which the plugins should be loaded"
 msgstr "Ordner aus dem die Plugins geladen werden sollen."
 
-#: src/commandline/mod.rs:37
+#: src/commandline/mod.rs:36
 msgid ""
 "Prints a sample config file. Beware that the contents of the sample file "
 "depend on the loaded plugins, so don't forget to supply the plugins "
 "parameter as needed."
 msgstr ""
 "Gibt eine Beispiel-Konfigurationsdatei aus. Bitte beachten Sie, dass der "
-"Inhalt dieses Beispiels von den momentan geladenen Plugins abhängt. "
-"Bitte vergessen Sie daher nicht, gegebenenfalls auch den Plugin-Ordner "
-"als Parameter anzugeben."
+"Inhalt dieses Beispiels von den momentan geladenen Plugins abhängt. Bitte "
+"vergessen Sie daher nicht, gegebenenfalls auch den Plugin-Ordner als "
+"Parameter anzugeben."
 
-#: src/commandline/mod.rs:39
+#: src/commandline/mod.rs:38
 msgid ""
 "If no config path is given, the code looks for the \"swaystatus/config\" "
 "file in your XDG config folder (typically \"$HOME/.config/\"). If that "
@@ -136,65 +132,84 @@ msgid ""
 msgstr ""
 "Falls kein Pfad zur Konfigurationsdatei angegeben wird, sucht das Programm "
 "zuerst nach der Datei \"swaystatus/config\" in Ihrem persönlichen XDG "
-"Konfigurationsordner (üblicherweise \"$HOME/.config/\"). Sollte diese "
-"Datei nicht existieren, wird angenommen, dass sich die Konfiguration in "
-"\"/etc/swaystatus/config\" befindet. Bei den Plugins verhält es sich "
-"ähnlich. Falls Sie keinen Pfad explizit angeben, wird zuerst der Ordner "
-"\"$HOME/.local/lib/swaystatus\" gesucht. Gibt es diesen Ordner nicht, "
-"wird ein Pfad verwendet, der während des Übersetzens des Programmes "
-"festgelegt wurde. Momentan ist dieser \"{}\"."
+"Konfigurationsordner (üblicherweise \"$HOME/.config/\"). Sollte diese Datei "
+"nicht existieren, wird angenommen, dass sich die Konfiguration in \"/etc/"
+"swaystatus/config\" befindet. Bei den Plugins verhält es sich ähnlich. Falls "
+"Sie keinen Pfad explizit angeben, wird zuerst der Ordner \"$HOME/.local/lib/"
+"swaystatus\" gesucht. Gibt es diesen Ordner nicht, wird ein Pfad verwendet, "
+"der während des Übersetzens des Programmes festgelegt wurde. Momentan ist "
+"dieser \"{}\"."
 
-#: src/commandline/mod.rs:40
+#: src/commandline/mod.rs:39
 msgid ""
 "{before-help}{bin} {version}\n"
-"{author-section}{about-section}\n"
+"{author}\n"
+"\n"
+"{about}\n"
 "USAGE\n"
 "    {usage}\n"
 "\n"
-"{all-args}{after-help}"
+"FLAGS:\n"
+"{flags}\n"
+"\n"
+"OPTIONS:\n"
+"{options}\n"
+"\n"
+"{after-help}"
 msgstr ""
 "{before-help}{bin} {version}\n"
-"{author-section}{about-section}\n"
-"VERWENDUNG\n"
+"{author}\n"
+"\n"
+"{about}\n"
+"VERWENDUNG:\n"
 "    {usage}\n"
 "\n"
-"{all-args}{after-help}"
+"SCHALTER:\n"
+"{flags}\n"
+"\n"
+"OPTIONEN:\n"
+"{options}\n"
+"\n"
+"{after-help}"
 
-#: src/main.rs:32
+#: src/main.rs:37
 msgid ""
 "Tried to load plugins from folder \"{}\", but failed. You might want to set "
 "a plugin directory on the command line. The actual error was:"
 msgstr ""
-"Der Versuch, Plugins aus dem Ordner \"{}\" zu laden schlug fehl. "
-"Es ist möglicherweise notwendig, einen Ordner als Kommandozeilenparameter "
+"Der Versuch, Plugins aus dem Ordner \"{}\" zu laden schlug fehl. Es ist "
+"möglicherweise notwendig, einen Ordner als Kommandozeilenparameter "
 "anzugeben. Die genaue Fehlermeldung ist:"
 
-#: src/main.rs:50
+#: src/main.rs:55
 msgid "No elements set up in configuration. Nothing to display."
-msgstr "In der Konfiguration sind keine Elemente zum Anzeigen definiert. "
-"Es gibt also nichts zu tun."
+msgstr ""
+"In der Konfiguration sind keine Elemente zum Anzeigen definiert. Es gibt "
+"also nichts zu tun."
 
 #. unwinding across plugin boundaries is a _bad_ idea. Unless we want our core dumped, that
 #. is. The documentation only mentions that unwinding across C functions doesn't work, but
 #. that seems to also be true for dynamically loaded Rust libs... That's why we can only
 #. print a general error here.
-#: src/main.rs:107
+#: src/main.rs:112
 msgid ""
 "At least one of the plugins panicked. For details please check the "
 "(hopefully existing) previous error messages."
 msgstr ""
-"Mindestens ein Plugin ist abgestürzt. Mehr Details sollten in einer "
-"früheren Fehlermeldung (vom Zeitpunkt des Absturzes) ersichtlich sein."
+"Mindestens ein Plugin ist abgestürzt. Mehr Details sollten in einer früheren "
+"Fehlermeldung (vom Zeitpunkt des Absturzes) ersichtlich sein."
 
-#: src/main.rs:119
+#: src/main.rs:124
 msgid "The configuration file could not be read. Nothing to do."
-msgstr "Die Konfigurationsdatei konnte nicht gelesen werden. Es gibt daher nichts zu tun."
+msgstr ""
+"Die Konfigurationsdatei konnte nicht gelesen werden. Es gibt daher nichts zu "
+"tun."
 
-#: src/main.rs:122
+#: src/main.rs:127
 msgid "The parser for the config file returned an error: {}"
 msgstr "Der Parser für die Konfigurationsdatei hat einen Fehler ausgegeben: {}"
 
-#: src/main.rs:132
+#: src/main.rs:137
 msgid ""
 "Tried to tell a plugin to quit, but that plugin seems to no longer listen to "
 "messages. Either that plugin has already terminated, or it's stuck. In the "
@@ -205,35 +220,39 @@ msgstr ""
 "dieses Plugin nicht mehr auf Anweisungen des Hauptprogramms zu hören. "
 "Möglicherweise wurde es bereits beendet, oder aber es ist hängen geblieben. "
 "In letzterem Fall ist es nicht mehr möglich, das Plugin sauber zu beenden. "
-"Es kann daher notwendig sein, diesen Prozess per SIGKILL zu beenden. "
-"Das Element, das nicht mehr reagiert ist Nummer {}, aus dem Plugin {}."
+"Es kann daher notwendig sein, diesen Prozess per SIGKILL zu beenden. Das "
+"Element, das nicht mehr reagiert ist Nummer {}, aus dem Plugin {}."
 
-#: src/main.rs:139
+#: src/main.rs:144
 msgid ""
 "Tried to tell a plugin to refresh, but it doesn't listen any more. Either "
 "the plugin already terminated, or it is stuck. The offending element is "
 "element number {} from plugin {}."
 msgstr ""
-"Es wurde versucht, ein Plugin zum Aktualisieren des Status-Textes aufzufordern. "
-"Allerdings scheint dieses Plugin nicht mehr auf Anweisungen aus dem Hauptprogramm "
-"zu hören. Möglicherweise wurde das Plugin bereits beendet, oder aber es ist hängen "
-"geblieben. In letzterem Fall ist es nicht mehr möglich, das Plugin sauber zu beenden. "
-"Es kann daher notwendig sein, diesen Prozess per SIGKILL zu beenden. "
-"Das Element, das nicht mehr reagiert ist Nummer {}, aus dem Plugin {}."
+"Es wurde versucht, ein Plugin zum Aktualisieren des Status-Textes "
+"aufzufordern. Allerdings scheint dieses Plugin nicht mehr auf Anweisungen "
+"aus dem Hauptprogramm zu hören. Möglicherweise wurde das Plugin bereits "
+"beendet, oder aber es ist hängen geblieben. In letzterem Fall ist es nicht "
+"mehr möglich, das Plugin sauber zu beenden. Es kann daher notwendig sein, "
+"diesen Prozess per SIGKILL zu beenden. Das Element, das nicht mehr reagiert "
+"ist Nummer {}, aus dem Plugin {}."
 
-#: src/main.rs:150 src/main.rs:152
+#: src/main.rs:155 src/main.rs:157
 msgid "Element number {} (plugin: {}) sent an error message: {}"
 msgstr "Element Nummer {} (Plugin: {}) hat eine Fehlermeldung geschickt: {}"
 
-#: src/main.rs:169
+#: src/main.rs:174
 msgid "<plugin crashed>"
 msgstr "<Plugin abgestürzt>"
 
-#: src/main.rs:170
+#: src/main.rs:175
 msgid ""
 "The plugin {} crashed while displaying element number {}. Please see the "
 "plugin's panic message above for details."
 msgstr ""
-"Das Plugin {} für Element Nummer {} ist abgestürzt. Mehr Details sind in "
-"der Fehlermeldung des Plugins selbst ersichtlich (sollte gleich über dieser "
+"Das Plugin {} für Element Nummer {} ist abgestürzt. Mehr Details sind in der "
+"Fehlermeldung des Plugins selbst ersichtlich (sollte gleich über dieser "
 "Meldung sein)."
+
+#~ msgid "Arguments"
+#~ msgstr "Argumente"
