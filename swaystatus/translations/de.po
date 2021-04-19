@@ -67,10 +67,10 @@ msgid ""
 "I, element {}, tried to inform the main thread that I crashed. However the "
 "main thread isn't listening any more. This should be impossible, but well... "
 "Also, it's not critical enough to halt the whole program..."
-msgstr """
-Ich, Element {}, habe versucht, dem Hauptprogramm mitzueilen, dass ich "
-"abgestürzt bin. Allerdings hört das Hauptprogramm nicht mehr zu. Das sollte 
-eigentlich unmöglich sein, aber gut, es ist passiert... Naja, wird schon nicht "
+msgstr ""
+"Ich, Element {}, habe versucht, dem Hauptprogramm mitzueilen, dass ich "
+"abgestürzt bin. Allerdings hört das Hauptprogramm nicht mehr zu. Das sollte "
+"eigentlich unmöglich sein, aber gut, es ist passiert... Naja, wird schon nicht "
 "so schlimm sein, dass es sinnvoll wäre das ganze Programm anzuhalten."
 
 #: src/signalhandler/mod.rs:19
