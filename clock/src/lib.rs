@@ -14,19 +14,36 @@ impl<'c> ClockRunnable<'c> {
         let now = chrono::offset::Local::now();
         now.format(&self.config.format).to_string()
     }
-    fn simple_loop(&self) {
+    fn simple_loop(&self, timeout : std::time::Duration) {
         loop {
             self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
-            match self.from_main.recv_timeout(std::time::Duration::from_secs_f32(self.config.refresh_rate)) {
+            match self.from_main.recv_timeout(timeout) {
                 Ok(MessagesFromMain::Refresh) | Err(RecvTimeoutError::Timeout) => {},
                 Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
             }
         }
     }
 
-    fn synchronized_loop(&self, second_fraction : u32) {
-        //TODO: implement...
-        self.simple_loop();
+
+    fn synchronized_loop(&self, full_seconds : u64, second_fraction : u32) {
+        let interval_duration = std::time::Duration::from_secs(full_seconds) / (second_fraction);
+        loop {
+             self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
+             let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
+             let target_time = now + interval_duration;
+
+             let target_millis = target_time.as_millis();
+             let target_millis_times_fraction = target_millis * (second_fraction as u128);
+             let now_millis = now.as_millis();
+             let target_rounded_millis_times_fraction = ((target_millis_times_fraction + 500)/1000)*1000;
+             let target_rounded_millis = target_rounded_millis_times_fraction / (second_fraction as u128);
+             assert!(target_rounded_millis >= now_millis);
+             let timeout = std::time::Duration::from_millis((target_rounded_millis - now_millis) as u64);
+             match self.from_main.recv_timeout(timeout) {
+                 Ok(MessagesFromMain::Refresh) | Err(RecvTimeoutError::Timeout) => {},
+                 Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
+             }
+        }
     }
 }
 
@@ -34,20 +51,24 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
     fn run(&self) {
         //there are two modes of operation for this module.
         //Which one is used depends entirely on the interval
-        //If the interval or its inverse is a full multiple of
-        //a second, we use the "synchronized" variant, which
+        //If the interval is a full multiple of a second, 
+        //we use the "synchronized" variant, which
         //aims at ticking approximately at the full second.
+        //
+        //Similarly if the interval can be written as 1/x seconds.
+        //
         //Otherwise we just loop.
-        let frac_part = self.config.refresh_rate.fract();
-        let inverse_frac_part = self.config.refresh_rate.recip().fract();
-        if frac_part.abs() > 1e-3 && inverse_frac_part.abs() > 1e-3 {
-            self.simple_loop();
+        let abs_frac_part = (self.config.refresh_rate.round() - self.config.refresh_rate).abs();
+        let inverse = self.config.refresh_rate.recip();
+        let abs_inverse_frac_part = (inverse.round() - inverse).abs();
+        if self.config.refresh_rate < 1e-3_f32 || ((abs_frac_part >= 1e-3_f32) && abs_inverse_frac_part >= 1e-3_f32) {
+            self.simple_loop(std::time::Duration::from_secs_f32(self.config.refresh_rate.abs()));
         }
-        else if frac_part.abs() <= 1e-3 {
-            self.synchronized_loop(1);
+        else if abs_frac_part <= 1e-3 {
+            self.synchronized_loop(self.config.refresh_rate.round() as u64, 1);
         }
         else {
-            self.synchronized_loop(self.config.refresh_rate.recip().trunc().abs() as u32);
+            self.synchronized_loop(1, inverse.round() as u32);
         }
     }
 }
