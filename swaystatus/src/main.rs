@@ -166,7 +166,7 @@ fn handle_message_from_element(texts : &mut Vec<String>, plugin : &str, element_
 fn print_texts(texts : &[String], settings : &config::SwaystatusMainConfig) {
     //Once we do more than just printing, we might want a more advanced code here...
     let separators = std::iter::once("").chain(std::iter::repeat(&settings.separator[..]));
-    for (separator, text) in texts.iter().zip(separators) {
+    for (separator, text) in separators.zip(texts) {
         print!("{}{}",separator,text);
     }
     println!(); //Previosly there was an explicit flush here, but printnl should do that for us.
