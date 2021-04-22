@@ -1,18 +1,18 @@
 [Settings]
 separator = ", "
 
-[[Elements]]
+[[Element]]
 Plugin = "ClockPlugin"
 
-[Elements.Config]
+[Element.Config]
 Format = "%+"
 
-[[Elements]]
+[[Element]]
 Plugin = "ClockPlugin"
 
-[Elements.Config]
+[Element.Config]
 Format = "%+"
 
-[Elements.Config.RefreshRate]
+[Element.Config.RefreshRate]
 Synchronization = "UTCSynchronized"
 PerThirtyMinutes = 3600 

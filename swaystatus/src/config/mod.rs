@@ -28,7 +28,7 @@ pub struct SwaystatusConfig<'p> {
     #[serde(rename = "Settings")]
     pub settings : Option<SwaystatusMainConfig>,
     ///Settings for each part of the output sting.
-    #[serde(rename = "Elements")]
+    #[serde(rename = "Element")]
     pub elements : Option<Vec<SwaystatusPluginConfig<'p>>>,
 }
 
@@ -118,8 +118,12 @@ impl Default for SwaystatusMainConfig {
 
 #[derive(Deserialize)]
 #[serde(field_identifier)]
-#[allow(non_camel_case_types)]
-enum SwaystatusConfigField { Settings, Elements, settings, elements }
+enum SwaystatusConfigField { 
+    #[serde(alias = "settings")]
+    Settings, 
+    #[serde(alias = "element", alias = "elements", alias = "Elements")]
+    Element 
+}
 struct SwaystatusConfigVisitor<'a>(&'a PluginDatabase<'a>) ;
 impl<'de, 'a> Visitor<'de> for SwaystatusConfigVisitor<'a> {
     type Value = SwaystatusConfig<'a>;
@@ -132,13 +136,13 @@ impl<'de, 'a> Visitor<'de> for SwaystatusConfigVisitor<'a> {
         let mut elem = None;
         while let Some(key) = map.next_key()? {
             match key {
-                SwaystatusConfigField::Settings | SwaystatusConfigField::settings => {
+                SwaystatusConfigField::Settings => {
                     if sett.is_some() {
                         return Err(de::Error::duplicate_field("Settings"));
                     }
                     sett = Some(map.next_value()?);
                 }
-                SwaystatusConfigField::Elements | SwaystatusConfigField::elements => {
+                SwaystatusConfigField::Element => {
                     if elem.is_some() {
                         return Err(de::Error::duplicate_field("Elements"));
                     }
