@@ -25,17 +25,17 @@ impl<'c> ClockRunnable<'c> {
     }
 
 
-    fn synchronized_loop(&self, full_seconds : u128, second_fraction : u128) {
+    fn synchronized_loop(&self, fraction_of_thirty_mins : u128) {
         loop {
              self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
              let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
              
              let now_millis = now.as_millis() +1; //+1 for rounding up. TODO: Add a conditional millisecond of sleep after startup or refresh to compensate if now_fraction != now_plus_1_fraction
-             let now_fraction_millis = now_millis * second_fraction;
-             let now_fraction = now_fraction_millis / 1000;
-             let target_fraction = now_fraction + full_seconds; //TODO: this is horrible. Make full seconds a separate loop function and just hardcode 1 here.
-             let target_rounded_fraction_millis = target_fraction * 1000;
-             let target_millis = target_rounded_fraction_millis / second_fraction;
+             let now_fraction_millis = now_millis * fraction_of_thirty_mins;
+             let now_fraction = now_fraction_millis / (1800000);
+             let target_fraction = now_fraction + 1; //Adds one fraction_of_thirty_mins
+             let target_rounded_fraction_millis = target_fraction * 1800000;
+             let target_millis = target_rounded_fraction_millis / fraction_of_thirty_mins;
              let timeout_millis = target_millis - now_millis +1; //the 1 from above again, this time to ensure timeout_millis is actually rounded _up_
              let timeout = std::time::Duration::from_millis(timeout_millis as u64);
              match self.from_main.recv_timeout(timeout) {
@@ -48,27 +48,44 @@ impl<'c> ClockRunnable<'c> {
 
 impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
     fn run(&self) {
-        //there are two modes of operation for this module.
-        //Which one is used depends entirely on the interval
-        //If the interval is a full multiple of a second, 
-        //we use the "synchronized" variant, which
-        //aims at ticking approximately at the full second.
-        //
-        //Similarly if the interval can be written as 1/x seconds.
-        //
-        //Otherwise we just loop.
-        let abs_frac_part = (self.config.refresh_rate.round() - self.config.refresh_rate).abs();
-        let inverse = self.config.refresh_rate.recip();
-        let abs_inverse_frac_part = (inverse.round() - inverse).abs();
-        if self.config.refresh_rate < 1e-3_f32 || ((abs_frac_part >= 1e-3_f32) && abs_inverse_frac_part >= 1e-3_f32) {
-            self.simple_loop(std::time::Duration::from_secs_f32(self.config.refresh_rate.abs()));
+        match self.config.refresh_rate {
+            ClockRefreshRate::NotSynchronized { seconds } => {
+                self.simple_loop(std::time::Duration::from_secs_f32(seconds.abs()));
+            },
+            ClockRefreshRate::UTCSynchronized { updates_per_thirty_minutes }=> {
+                self.synchronized_loop(std::cmp::max(updates_per_thirty_minutes,1) as u128);
+            }
         }
-        else if abs_frac_part <= 1e-3 {
-            self.synchronized_loop(self.config.refresh_rate.round() as u128, 1);
-        }
-        else {
-            self.synchronized_loop(1, inverse.round() as u128);
-        }
+    }
+}
+
+/// How the clock should refresh. There are two modes of operation. NotSynchronizedSeconds just
+/// sleeps the given number of seconds  (float) between updates. As the name implies, it's NOT
+/// synchronized to UTC, not even at startup. This means, that if you set a refresh rate of 3600
+/// seconds and start the program at 2:45, the clock will remain at 2:45 until it's actually
+/// 3:45... This setting takes a floating point amount of seconds as parameter.
+/// The other mode of operation is synchronized to UTC. It can be set to update every 30/x minutes,
+/// where x is a number between 1 and 65535. This range limitation was chosen to ensure meaningful
+/// input. The 30 minute maximum for time between updates was chosen because of time zones.
+/// Synchronizing to UTC days is not useful, because UTC midnight will in general not correspond to
+/// the local midnight time. Synchronizing to UTC hours is questionable for the same reasons,
+/// given that there are some time zones offset by 30 minutes. This brings us to the largest
+/// duration that actually makes sense to synchronize with UTC: 30 minutes. The maximum update
+/// rate has its current value because of accuracy limitations. Thread sleep is inherently
+/// imprecise. Depending on the hardware/software, the error can be up to milliseconds. For a
+/// simple wall clock there is little point in investing CPU cycles for higher accuracy, so the
+/// maximum update rate was chosen to be way below 1/ms. By coincidence a 16 bit integer fits the
+/// range of reasonable values nicely.
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum ClockRefreshRate {
+    NotSynchronized {
+        #[serde(rename = "UnsyncedEverySeconds")]
+        seconds : f32
+    },
+    UTCSynchronized {
+        #[serde(rename = "UTCSyncedUpdatesPerThirtyMinutes")]
+        updates_per_thirty_minutes : u16
     }
 }
 
@@ -76,14 +93,15 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
 #[serde(rename_all = "PascalCase",default)]
 struct ClockConfig {
     format : String,
-    refresh_rate : f32
+    #[serde(flatten)]
+    refresh_rate : ClockRefreshRate 
 }
 
 impl Default for ClockConfig {
     fn default() -> Self {
         ClockConfig {
             format : String::from("%R"), 
-            refresh_rate : 1.0
+            refresh_rate : ClockRefreshRate::UTCSynchronized { updates_per_thirty_minutes: 1800 }
         }
     }
 }

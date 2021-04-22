@@ -5,5 +5,12 @@ separator = ", "
 Plugin = "ClockPlugin"
 
 [Elements.Config]
-Format = "%R"
-RefreshRate = 3.0
+Format = "%+"
+UTCSyncedUpdatesPerThirtyMinutes = 1800
+
+[[Elements]]
+Plugin = "ClockPlugin"
+
+[Elements.Config]
+Format = "%+"
+UnsyncedEverySeconds = 10.0
