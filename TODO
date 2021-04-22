@@ -1,7 +1,3 @@
 o) Factor out lib- and plugin-loading in a way that still gives a vector of libs, but an Iterator over the plugins (so caller can choose if Vec or something else)
 o) Add --plugin-help parameter that takes a list of plugins for which to display help (or if none given for all of them). This also means changing the Plugin trait once more.
 o) Add --list-plugins parameter that just lists all loaded plugins.
-
-Clock:
-o) Add a corrective sleep of 1 ms if rounding errors are detected at startup or manual update. (current time + 1 ms rounds to a different update-fraction than current time)
-o) Change configuration format. Instead of directly entering seconds as a float, update rate should be "how often to update within 30 minutes" as u16. That way the _data type_ already enforces the precision limits :D

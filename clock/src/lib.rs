@@ -14,6 +14,10 @@ impl<'c> ClockRunnable<'c> {
         let now = chrono::offset::Local::now();
         now.format(&self.config.format).to_string()
     }
+
+    /// Simple, non-synchronized loop. Just sleeps the configured duration between sending the
+    /// current time to the main module. Because thread sleeping is inaccurrate, this will alias
+    /// sooner or later. Probably sooner.
     fn simple_loop(&self, timeout : std::time::Duration) {
         loop {
             self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
@@ -24,13 +28,25 @@ impl<'c> ClockRunnable<'c> {
         }
     }
 
+    fn fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins : u128) {
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
+        let now_millis = now.as_millis();
+        let now_millis_up = now_millis + 1;
+        let now_fraction_millis = now_millis * fraction_of_thirty_mins;
+        let now_fraction_millis_up = now_millis_up * fraction_of_thirty_mins;
+        if now_fraction_millis_up / 1800000 != now_fraction_millis / 1800000 {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+    }
+
 
     fn synchronized_loop(&self, fraction_of_thirty_mins : u128) {
+        Self::fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins);
         loop {
              self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
              let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
              
-             let now_millis = now.as_millis() +1; //+1 for rounding up. TODO: Add a conditional millisecond of sleep after startup or refresh to compensate if now_fraction != now_plus_1_fraction
+             let now_millis = now.as_millis() +1; //+1 for rounding up. 
              let now_fraction_millis = now_millis * fraction_of_thirty_mins;
              let now_fraction = now_fraction_millis / (1800000);
              let target_fraction = now_fraction + 1; //Adds one fraction_of_thirty_mins
@@ -39,7 +55,10 @@ impl<'c> ClockRunnable<'c> {
              let timeout_millis = target_millis - now_millis +1; //the 1 from above again, this time to ensure timeout_millis is actually rounded _up_
              let timeout = std::time::Duration::from_millis(timeout_millis as u64);
              match self.from_main.recv_timeout(timeout) {
-                 Ok(MessagesFromMain::Refresh) | Err(RecvTimeoutError::Timeout) => {},
+                 Ok(MessagesFromMain::Refresh) => {
+                     Self::fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins)
+                 },
+                 Err(RecvTimeoutError::Timeout) => {},
                  Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
              }
         }
