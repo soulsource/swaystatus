@@ -6,11 +6,13 @@ Plugin = "ClockPlugin"
 
 [Elements.Config]
 Format = "%+"
-UTCSyncedUpdatesPerThirtyMinutes = 1800
 
 [[Elements]]
 Plugin = "ClockPlugin"
 
 [Elements.Config]
 Format = "%+"
-UnsyncedEverySeconds = 10.0
+
+[Elements.Config.RefreshRate]
+Synchronization = "UTCSynchronized"
+PerThirtyMinutes = 3600 

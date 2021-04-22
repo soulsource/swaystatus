@@ -77,14 +77,14 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
 /// maximum update rate was chosen to be way below 1/ms. By coincidence a 16 bit integer fits the
 /// range of reasonable values nicely.
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(tag = "Synchronization")]
 enum ClockRefreshRate {
     NotSynchronized {
-        #[serde(rename = "UnsyncedEverySeconds")]
+        #[serde(rename = "Seconds")]
         seconds : f32
     },
     UTCSynchronized {
-        #[serde(rename = "UTCSyncedUpdatesPerThirtyMinutes")]
+        #[serde(rename = "PerThirtyMinutes")]
         updates_per_thirty_minutes : u16
     }
 }
@@ -93,7 +93,6 @@ enum ClockRefreshRate {
 #[serde(rename_all = "PascalCase",default)]
 struct ClockConfig {
     format : String,
-    #[serde(flatten)]
     refresh_rate : ClockRefreshRate 
 }
 
