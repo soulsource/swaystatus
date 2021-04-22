@@ -25,20 +25,19 @@ impl<'c> ClockRunnable<'c> {
     }
 
 
-    fn synchronized_loop(&self, full_seconds : u64, second_fraction : u32) {
-        let interval_duration = std::time::Duration::from_secs(full_seconds) / (second_fraction);
+    fn synchronized_loop(&self, full_seconds : u128, second_fraction : u128) {
         loop {
              self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
              let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
-             let target_time = now + interval_duration;
-
-             let target_millis = target_time.as_millis();
-             let target_millis_times_fraction = target_millis * (second_fraction as u128);
-             let now_millis = now.as_millis();
-             let target_rounded_millis_times_fraction = ((target_millis_times_fraction + 500)/1000)*1000;
-             let target_rounded_millis = target_rounded_millis_times_fraction / (second_fraction as u128);
-             assert!(target_rounded_millis >= now_millis);
-             let timeout = std::time::Duration::from_millis((target_rounded_millis - now_millis) as u64);
+             
+             let now_millis = now.as_millis() +1; //+1 for rounding up. TODO: Add a conditional millisecond of sleep after startup or refresh to compensate if now_fraction != now_plus_1_fraction
+             let now_fraction_millis = now_millis * second_fraction;
+             let now_fraction = now_fraction_millis / 1000;
+             let target_fraction = now_fraction + full_seconds; //TODO: this is horrible. Make full seconds a separate loop function and just hardcode 1 here.
+             let target_rounded_fraction_millis = target_fraction * 1000;
+             let target_millis = target_rounded_fraction_millis / second_fraction;
+             let timeout_millis = target_millis - now_millis +1; //the 1 from above again, this time to ensure timeout_millis is actually rounded _up_
+             let timeout = std::time::Duration::from_millis(timeout_millis as u64);
              match self.from_main.recv_timeout(timeout) {
                  Ok(MessagesFromMain::Refresh) | Err(RecvTimeoutError::Timeout) => {},
                  Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
@@ -65,10 +64,10 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
             self.simple_loop(std::time::Duration::from_secs_f32(self.config.refresh_rate.abs()));
         }
         else if abs_frac_part <= 1e-3 {
-            self.synchronized_loop(self.config.refresh_rate.round() as u64, 1);
+            self.synchronized_loop(self.config.refresh_rate.round() as u128, 1);
         }
         else {
-            self.synchronized_loop(1, inverse.round() as u32);
+            self.synchronized_loop(1, inverse.round() as u128);
         }
     }
 }
