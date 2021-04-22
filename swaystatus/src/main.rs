@@ -25,28 +25,27 @@ fn main() {
         eprintln!("Localization could not be loaded. Will use English instead.");
     }
     let commandline_parameters = commandline::parse_commandline();
-    while !core_loop(&commandline_parameters.plugin_folder, &commandline_parameters.config_file, commandline_parameters.print_sample_config) {}
+    
+    if commandline_parameters.print_sample_config {
+        return print_sample_config(&commandline_parameters.plugin_folder);
+    }
+
+    while !core_loop(&commandline_parameters.plugin_folder, &commandline_parameters.config_file) {}
 }
 
 /// Actually the main() function. Factored out so we can restart without actually restaring.
 /// Because some people might expect that SIGHUP triggers a reload, and it's trivial to implement.
-fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path, print_config : bool) -> bool {
+fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> bool {
     //Read plugins first (needed for config deserialization, given the config files has
     //plugin config as well...
     let libraries = match plugin_database::Libraries::load_from_folder(plugin_path) {
         Ok(x) => x,
         Err(e) => {
-            eprintln!("{} {}", gettext!("Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:", plugin_path.display()), e);
+            print_plugin_load_error(e,plugin_path);
             return true;
         }
     };
     let plugins = plugin_database::PluginDatabase::new(&libraries); 
-
-    if print_config {
-        config::SwaystatusConfig::print_sample_config(&plugins);
-        return true;
-    }
-
 
     let (elements, main_config) = match config::SwaystatusConfig::read_config(config_path, &plugins) {
         Ok(x) => (x.elements.unwrap_or_default(), x.settings.unwrap_or_default()),
@@ -175,4 +174,22 @@ fn print_texts(texts : &[String], settings : &config::SwaystatusMainConfig) {
 fn handle_crash_from_element(texts : &mut Vec<String>, name : &str, element_number : usize) {
     texts[element_number] = gettext("<plugin crashed>");
     eprintln!("{}", gettext!("The plugin {} crashed while displaying element number {}. Please see the plugin's panic message above for details.",name, element_number));
+}
+
+fn print_plugin_load_error(e : std::io::Error, plugin_path : &std::path::Path) {
+    eprintln!("{} {}", gettext!("Tried to load plugins from folder \"{}\", but failed. You might
+               want to set a plugin directory on the command line. The actual error was:", plugin_path.display()), e);
+}
+
+fn print_sample_config(plugin_path : &std::path::Path) {
+    let libraries = match plugin_database::Libraries::load_from_folder(plugin_path) {
+        Ok(x) => x,
+        Err(e) => {
+            print_plugin_load_error(e,plugin_path);
+            return;
+        }
+    };
+    let plugins = plugin_database::PluginDatabase::new(&libraries); 
+
+    config::SwaystatusConfig::print_sample_config(&plugins);
 }
