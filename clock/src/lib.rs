@@ -28,9 +28,13 @@ impl<'c> ClockRunnable<'c> {
         }
     }
 
-    fn fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins : u128) {
+    /// Helper for `synchronized_loop(fraction_of_thirty_mins : u64)`. Due to rounding, if one is
+    /// extremely unlucky and refreshes/starts the loop in the last millisecond before a
+    /// synchronization point, one synchronization will be skipped. This function checks for such
+    /// rounding issues and sleeps for the problematic ms.
+    fn fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins : u64) {
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
-        let now_millis = now.as_millis();
+        let now_millis = now.as_millis() as u64;
         let now_millis_up = now_millis + 1;
         let now_fraction_millis = now_millis * fraction_of_thirty_mins;
         let now_fraction_millis_up = now_millis_up * fraction_of_thirty_mins;
@@ -40,23 +44,29 @@ impl<'c> ClockRunnable<'c> {
     }
 
 
-    fn synchronized_loop(&self, fraction_of_thirty_mins : u128) {
+    /// Loop that's synchronized to UTC. It hardcoded operates on a basis of 30 minutes and uses
+    /// millisecond accurracy (meaning: calculations are rounded up to an error of 1 ms, and thread
+    /// sleeping inacurracies can then cause even higher errors). For this reason, it's not advised
+    /// to update more often than every 0.1 seconds or so.
+    /// The calcluations are done in u64 because there's little to gain by using u128, given that
+    /// with those constraints 64 bits will last for nearly 9000 years...
+    fn synchronized_loop(&self, fraction_of_thirty_mins : u64) {
         Self::fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins);
         loop {
              self.to_main.send_update(Ok(self.print_current_time_with_format())).expect("Clock plugin tried to send the current time to the main program, but the main program doesn't listen any more.");
              let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).expect("System time before beginning of UNIX epoch?!?");
              
-             let now_millis = now.as_millis() +1; //+1 for rounding up. 
+             let now_millis = now.as_millis() as u64 + 1; //+1 for rounding up. 
              let now_fraction_millis = now_millis * fraction_of_thirty_mins;
              let now_fraction = now_fraction_millis / (1800000);
              let target_fraction = now_fraction + 1; //Adds one fraction_of_thirty_mins
              let target_rounded_fraction_millis = target_fraction * 1800000;
              let target_millis = target_rounded_fraction_millis / fraction_of_thirty_mins;
              let timeout_millis = target_millis - now_millis +1; //the 1 from above again, this time to ensure timeout_millis is actually rounded _up_
-             let timeout = std::time::Duration::from_millis(timeout_millis as u64);
+             let timeout = std::time::Duration::from_millis(timeout_millis);
              match self.from_main.recv_timeout(timeout) {
                  Ok(MessagesFromMain::Refresh) => {
-                     Self::fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins)
+                     Self::fix_rounding_error_if_bad_refresh(fraction_of_thirty_mins);
                  },
                  Err(RecvTimeoutError::Timeout) => {},
                  Ok(MessagesFromMain::Quit) | Err(RecvTimeoutError::Disconnected) => { break; },
@@ -72,7 +82,7 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
                 self.simple_loop(std::time::Duration::from_secs_f32(seconds.abs()));
             },
             ClockRefreshRate::UTCSynchronized { updates_per_thirty_minutes }=> {
-                self.synchronized_loop(std::cmp::max(updates_per_thirty_minutes,1) as u128);
+                self.synchronized_loop(std::cmp::max(updates_per_thirty_minutes,1) as u64);
             }
         }
     }
