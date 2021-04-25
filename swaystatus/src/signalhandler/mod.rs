@@ -16,7 +16,7 @@ pub fn handle_signals(scope : &Scope, sender : mpsc::Sender<communication::Messa
         signal::SIGPIPE, //quit, because nobody's listening
         signal::SIGHUP,  //quit, but send the Reload message instead of the Quit one.
         signal::SIGUSR1, //trigger a refresh. The ONLY one upon which we dont break the loop!
-    ]).unwrap_or_else(|_| {panic!(gettextrs::gettext("Failed to register signal handler. Since without signal handler there's no proper way to cleanly exit any plugins, we bail now."))});
+    ]).unwrap_or_else(|_| {panic!("{}",gettextrs::gettext("Failed to register signal handler. Since without signal handler there's no proper way to cleanly exit any plugins, we bail now."))});
 
     scope.spawn(move |_| {
         for signal in &mut signals {
@@ -31,5 +31,5 @@ pub fn handle_signals(scope : &Scope, sender : mpsc::Sender<communication::Messa
 }
 
 fn send(sender : &mpsc::Sender<communication::Message>, message : communication::InternalMessage) {
-    sender.send(communication::Message::Internal(message)).unwrap_or_else(|_| {panic!(gettextrs::gettext("Message handler failed to send a message to main thread. This is supposed to be impossible. In any case it's a critical error."))});
+    sender.send(communication::Message::Internal(message)).unwrap_or_else(|_| {panic!("{}",gettextrs::gettext("Message handler failed to send a message to main thread. This is supposed to be impossible. In any case it's a critical error."))});
 }
