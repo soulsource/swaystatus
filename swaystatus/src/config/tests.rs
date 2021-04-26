@@ -82,7 +82,7 @@ fn custom_deserialize_optional_field_settings()
 {
     let p = get_plugin_database_with_test_plugin();
     let test_config = String::from(
-    "[[Elements]]\nPlugin = \"TestPlugin\"\n\n[Elements.Config]\nlines = 2\nskull = \"skully\"\n");
+    "[[Element]]\nPlugin = \"TestPlugin\"\n\n[Element.Config]\nlines = 2\nskull = \"skully\"\n");
     let deserialized = SwaystatusConfig::deserialize(&test_config, &p).unwrap();
     let serialized = toml::to_string(&deserialized).unwrap();
     //println!("{}", serialized);
@@ -108,7 +108,7 @@ fn custom_deserialize_multiple_plugins()
 {
     let p = get_plugin_database_with_test_plugin();
     let test_config = String::from(
-    "[[Elements]]\nPlugin = \"TestPlugin\"\n\n[Elements.Config]\nlines = 2\nskull = \"bones\"\n\n[[Elements]]\nPlugin = \"TestPlugin\"\n\n[Elements.Config]\nlines = 5\nskull = \"pirate\"\n");
+    "[[Element]]\nPlugin = \"TestPlugin\"\n\n[Element.Config]\nlines = 2\nskull = \"bones\"\n\n[[Element]]\nPlugin = \"TestPlugin\"\n\n[Element.Config]\nlines = 5\nskull = \"pirate\"\n");
     let deserialized = SwaystatusConfig::deserialize(&test_config, &p).unwrap();
     let serialized = toml::to_string(&deserialized).unwrap();
     //println!("{}", serialized);

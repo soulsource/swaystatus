@@ -10,6 +10,7 @@ use gettextrs::*;
 use crossbeam_utils::thread;
 use std::sync::mpsc;
 
+use commandline::CommandlineAction;
 #[cfg(test)]
 pub mod test_plugin;
 
@@ -25,12 +26,21 @@ fn main() {
         eprintln!("Localization could not be loaded. Will use English instead.");
     }
     let commandline_parameters = commandline::parse_commandline();
-    
-    if commandline_parameters.print_sample_config {
-        return print_sample_config(&commandline_parameters.plugin_folder);
+    match commandline_parameters.action {
+        CommandlineAction::PrintSampleConfig => { 
+            print_sample_config(&commandline_parameters.plugin_folder);
+        }
+        CommandlineAction::ListPlugins => {
+            list_plugins(&commandline_parameters.plugin_folder);
+        }
+        CommandlineAction::PluginHelp(list) => {
+            print_plugin_help(&commandline_parameters.plugin_folder, list);
+        }
+        CommandlineAction::Run { config_file } => {
+            while !core_loop(&commandline_parameters.plugin_folder, &config_file) {}
+        }
     }
 
-    while !core_loop(&commandline_parameters.plugin_folder, &commandline_parameters.config_file) {}
 }
 
 /// Actually the main() function. Factored out so we can restart without actually restaring.
@@ -192,4 +202,50 @@ fn print_sample_config(plugin_path : &std::path::Path) {
     let plugins = plugin_database::PluginDatabase::new(&libraries); 
 
     config::SwaystatusConfig::print_sample_config(&plugins);
+}
+
+fn list_plugins(plugin_path : &std::path::Path) {
+    let libraries = match plugin_database::Libraries::load_from_folder(plugin_path) {
+        Ok(x) => x,
+        Err(e) => {
+            print_plugin_load_error(e,plugin_path);
+            return;
+        }
+    };
+    let plugins = plugin_database::PluginDatabase::new(&libraries);
+    for (name, _) in plugins.get_name_and_plugin_iterator() {
+        println!("{}", name);
+    }
+}
+
+fn print_plugin_help(plugin_path : &std::path::Path, list : commandline::PluginHelpOption) {
+    let libraries = match plugin_database::Libraries::load_from_folder(plugin_path) {
+        Ok(x) => x,
+        Err(e) => {
+            print_plugin_load_error(e,plugin_path);
+            return;
+        }
+    };
+    let plugins = plugin_database::PluginDatabase::new(&libraries);
+    match list {
+        commandline::PluginHelpOption::All => {
+            for (n, p) in plugins.get_name_and_plugin_iterator() {
+                println!("{}\n",gettext!("Plugin: \"{}\"",n));
+                p.print_help();
+                println!("\n\n");
+            }
+        }
+        commandline::PluginHelpOption::List(l) => {
+            for name in l {
+                println!("{}\n",gettext!("Plugin: \"{}\"",name));
+                if let Some(p) = plugins.get_plugin(&name) {
+                    p.print_help();
+                }
+                else {
+                    println!("{}", gettext!("Plugin {} not found.", name));
+                }
+                println!("\n\n");
+            }
+        }
+    }
 }

@@ -13,11 +13,11 @@ pub struct TestRunnable;
 pub struct DeadEndSend;
 
 impl MsgMainToModule for DeadEndSend {
-    fn send_quit(&self) -> Result<(),()> {
-        Err(())
+    fn send_quit(&self) -> Result<(),PluginCommunicationError> {
+        Err(PluginCommunicationError)
     }
-    fn send_refresh(&self) -> Result<(),()> {
-        Err(())
+    fn send_refresh(&self) -> Result<(),PluginCommunicationError> {
+        Err(PluginCommunicationError)
     }
 }
 
@@ -34,7 +34,7 @@ impl SwayStatusModuleRunnable for TestRunnable {
 }
 
 impl SwayStatusModuleInstance for TestConfig {
-    fn make_runnable<'p>(&'p self, to_main : Box<dyn MsgModuleToMain + 'p>) -> (Box<dyn SwayStatusModuleRunnable + 'p>, Box<dyn MsgMainToModule + 'p>) {
+    fn make_runnable<'p>(&'p self, _to_main : Box<dyn MsgModuleToMain + 'p>) -> (Box<dyn SwayStatusModuleRunnable + 'p>, Box<dyn MsgMainToModule + 'p>) {
        return (Box::new(TestRunnable), Box::new(DeadEndSend)); 
     }
 }
@@ -53,6 +53,9 @@ impl SwayStatusModule for TestPlugin {
             skull : String::from("☠"),
         };
         return Box::new(config);
+    }
+    fn print_help(&self) {
+        println!("Not implemented for a test plugin. Hey, this only exists to test serializaiont!");
     }
 }
 

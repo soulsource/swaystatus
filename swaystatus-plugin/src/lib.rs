@@ -32,9 +32,13 @@
 //! This is because loading plugins is by definition unsafe, and we need to make sure that nothing
 //! can exist beyond the symbols from the dynamic library.
 //!
+//! For implementors of this interface the same limitations apply, however afaik there is no way to
+//! enforce them. This means that you need to make sure that all additional threads you create are
+//! joined before the `run()` method of the runnable returns, otherwise your code will crash.
+//!
 //! ## Note on linkage:
 //! While you can't easily change how dependencies are linked into your plugin, you can choose to
-//! dynamically link against the Rust standard library. For memory reasons I'd strongly recommend
+//! dynamically link against the Rust standard library. For memory reasons I'd recommend
 //! to do so. The easiest way is to set rustc compiler flags using .cargo/config in the project.
 
 use erased_serde::serialize_trait_object;
@@ -141,6 +145,11 @@ pub trait SwayStatusModule {
     ///This is used for the command line option to print a default configuration.
     ///Let it return your config with all defaults (including optional fields).
     fn get_default_config<'p>(&'p self) -> Box<dyn SwayStatusModuleInstance + 'p>;
+
+    ///This method should print a short summary of how to use and how to configure your plugin.
+    ///This is the place to explain enum variants not present in your sample config, or info on
+    ///advanced features.
+    fn print_help(&self);
 }
 
 ///This is what `SwayStatusModuleInstance::make_runnable()` returns. The main function of your module.
