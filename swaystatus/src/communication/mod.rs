@@ -46,8 +46,8 @@ impl Drop for SenderToMain {
 }
 
 impl plugin::MsgModuleToMain for SenderToMain {
-    fn send_update(&self, text : Result<String, plugin::PluginError>) -> Result<(),()> {
+    fn send_update(&self, text : Result<String, plugin::PluginError>) -> Result<(),plugin::PluginCommunicationError> {
         let message = Message::External { text , element_number : self.element_number };
-        self.sender.send(message).map_err(|_| {})
+        self.sender.send(message).map_err(|_| plugin::PluginCommunicationError)
     }
 }

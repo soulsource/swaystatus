@@ -81,7 +81,7 @@ impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
             ClockRefreshRate::NotSynchronized { seconds } => {
                 self.simple_loop(std::time::Duration::from_secs_f32(seconds.abs()));
             },
-            ClockRefreshRate::UTCSynchronized { updates_per_thirty_minutes }=> {
+            ClockRefreshRate::UtcSynchronized { updates_per_thirty_minutes }=> {
                 self.synchronized_loop(std::cmp::max(updates_per_thirty_minutes,1) as u64);
             }
         }
@@ -112,7 +112,7 @@ enum ClockRefreshRate {
         #[serde(rename = "Seconds")]
         seconds : f32
     },
-    UTCSynchronized {
+    UtcSynchronized {
         #[serde(rename = "PerThirtyMinutes")]
         updates_per_thirty_minutes : u16
     }
@@ -129,7 +129,7 @@ impl Default for ClockConfig {
     fn default() -> Self {
         ClockConfig {
             format : String::from("%R"), 
-            refresh_rate : ClockRefreshRate::UTCSynchronized { updates_per_thirty_minutes: 1800 }
+            refresh_rate : ClockRefreshRate::UtcSynchronized { updates_per_thirty_minutes: 1800 }
         }
     }
 }
@@ -175,11 +175,11 @@ enum MessagesFromMain {
 struct SenderForMain(Sender<MessagesFromMain>);
 
 impl MsgMainToModule for SenderForMain {
-    fn send_quit(&self) -> Result<(),()> {
-        self.0.send(MessagesFromMain::Quit).map_err(|_| ())
+    fn send_quit(&self) -> Result<(),PluginCommunicationError> {
+        self.0.send(MessagesFromMain::Quit).map_err(|_| PluginCommunicationError)
     }
-    fn send_refresh(&self) -> Result<(),()> {
-        self.0.send(MessagesFromMain::Refresh).map_err(|_| ())
+    fn send_refresh(&self) -> Result<(),PluginCommunicationError> {
+        self.0.send(MessagesFromMain::Refresh).map_err(|_| PluginCommunicationError)
     }
 }
 

@@ -8,5 +8,5 @@ Plugin = "ClockPlugin"
 Format = "%+"
 
 [Element.Config.RefreshRate]
-Synchronization = "UTCSynchronized"
+Synchronization = "UtcSynchronized"
 PerThirtyMinutes = 1800 

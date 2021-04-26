@@ -77,13 +77,13 @@ pub trait MsgMainToModule {
     /// Implement this in such a way, that when it's called from the main thread, your module will
     /// soon-ish return from it's main function, after cleaning up it's resources and after joining
     /// all threads it spawns.
-    fn send_quit(&self) -> Result<(),()>;
+    fn send_quit(&self) -> Result<(),PluginCommunicationError>;
 
     /// Implement this in such a way, that when it's called from the main thread, your module will
     /// soon-ish send an updated text. The main module does not really wait for updates, so
     /// ignoring this or implementing it empty is perfectly fine if you know that your module's
     /// output cannot possibly change between updates it sends anyhow.
-    fn send_refresh(&self) -> Result<(),()>;
+    fn send_refresh(&self) -> Result<(),PluginCommunicationError>;
 }
 
 /// When communicating an error to the main program, this allows to choose an appropriate handling
@@ -124,7 +124,7 @@ pub trait MsgModuleToMain : Send {
     /// stdout output. While this can in theory return an error, that should practically never
     /// happen. If this errors, you should probably clean up your resources and return from the
     /// run() function. In other words, act as if main had sent you a quit command.
-    fn send_update(&self, text : Result<String, PluginError>) -> Result<(),()>;
+    fn send_update(&self, text : Result<String, PluginError>) -> Result<(),PluginCommunicationError>;
 }
 
 /// Interface your module should implement. All functions of this will be called in the main thread.
@@ -161,3 +161,15 @@ pub trait SwayStatusModuleInstance : erased_serde::Serialize {
     fn make_runnable<'p>(&'p self, to_main : Box<dyn MsgModuleToMain + 'p>) -> (Box<dyn SwayStatusModuleRunnable + 'p>, Box<dyn MsgMainToModule + 'p>);
 }
 serialize_trait_object!(SwayStatusModuleInstance);
+
+///Error type used by send functions.
+#[derive(Debug)]
+pub struct PluginCommunicationError;
+
+impl std::fmt::Display for PluginCommunicationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"Communication between plugin and main program terminated unexpectedly")
+    }
+}
+
+impl std::error::Error for PluginCommunicationError {}
