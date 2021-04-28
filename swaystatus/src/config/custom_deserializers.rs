@@ -113,7 +113,7 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for PluginConfigDeserializeSeed<'a, 'b> {
 #[derive(Deserialize)]
 #[serde(field_identifier)]
 #[allow(non_camel_case_types)]
-enum PluginConfigField { Plugin, Config, plugin, config }
+enum PluginConfigField { Plugin, Config, plugin, config, General, general }
 struct PluginConfigVisitor<'a>(&'a PluginDatabase<'a>);
 impl<'de, 'a> Visitor<'de> for PluginConfigVisitor<'a> {
     type Value = SwaystatusPluginConfig<'a>;
@@ -125,6 +125,7 @@ impl<'de, 'a> Visitor<'de> for PluginConfigVisitor<'a> {
     where V: MapAccess<'de>, {
         let mut plug = None;
         let mut conf = None;
+        let mut gen = None;
         while let Some(key) = map.next_key()? {
             match key {
                 PluginConfigField::Plugin | PluginConfigField::plugin => {
@@ -144,9 +145,16 @@ impl<'de, 'a> Visitor<'de> for PluginConfigVisitor<'a> {
                         return Err(de::Error::missing_field("Plugin"));
                     }
                 }
+                PluginConfigField::General | PluginConfigField::general => {
+                    if gen.is_some() {
+                        return Err(de::Error::duplicate_field("General"));
+                    }
+                    gen = Some(map.next_value()?);
+                }
             }
         }
         Ok(SwaystatusPluginConfig{
+            general : gen.unwrap_or_default(),
             plugin: plug.ok_or_else(|| de::Error::missing_field("Plugin"))?,
             config : conf.ok_or_else(|| de::Error::missing_field("Config"))?
         })

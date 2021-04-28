@@ -44,7 +44,28 @@ pub struct SwaystatusPluginConfig<'p> {
     #[serde(rename = "Plugin")]
     plugin : String,
     #[serde(rename = "Config")]
-    config : Box<dyn plugin::SwayStatusModuleInstance + 'p>
+    config : Box<dyn plugin::SwayStatusModuleInstance + 'p>,
+    #[serde(rename = "General")]
+    general : SwaystatusElementNonPluginOptions
+}
+
+/**
+ * Struct containing the per-element options that are not plugin-specific.
+ */
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields, default, rename_all="PascalCase")]
+pub struct SwaystatusElementNonPluginOptions {
+    pub before_text : String,
+    pub after_text : String
+}
+
+impl Default for SwaystatusElementNonPluginOptions {
+    fn default() -> Self {
+        SwaystatusElementNonPluginOptions{
+            before_text : String::new(),
+            after_text : String::new() 
+        }
+    }
 }
 
 impl<'p> SwaystatusConfig<'p> {
@@ -64,6 +85,7 @@ impl<'p> SwaystatusConfig<'p> {
                 let v : Vec<SwaystatusPluginConfig> = 
                     plugins.get_name_and_plugin_iterator().map(|(name, object)| {
                         SwaystatusPluginConfig{ 
+                            general : SwaystatusElementNonPluginOptions::default(),
                             plugin : name.clone(), 
                             config : object.get_default_config()
                         }
