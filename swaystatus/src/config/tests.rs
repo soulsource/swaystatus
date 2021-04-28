@@ -1,7 +1,6 @@
 use super::*;
 use crate::plugin::*;
 use crate::test_plugin::TestPlugin; 
-
 use crate::plugin_database::test_helper::*;
 
 //to test the internals of the custom deserialize implementation, we need to check how it 
@@ -60,7 +59,7 @@ fn plugin_config_deserialize_seed_calls_correct_plugin() {
     let p = get_plugin_database_with_test_plugin(); 
 
     let plugin_name = String::from(TestPlugin.get_name());
-    let v = super::PluginConfigDeserializeSeed(&p, &plugin_name);
+    let v = custom_deserializers::PluginConfigDeserializeSeed(&p, &plugin_name);
     let result = v.deserialize(MockDeserializerForPluginConfigDeserializeSeed);
     assert!(result.is_err());
     assert_eq!(result.err().unwrap().0, "Correct");
@@ -71,7 +70,7 @@ fn plugin_config_deserialize_seed_correct_plugin_not_found_error()
 {
     let p = get_plugin_database_empty();
     let plugin_name = String::from(TestPlugin.get_name());
-    let v = super::PluginConfigDeserializeSeed(&p, &plugin_name);
+    let v = custom_deserializers::PluginConfigDeserializeSeed(&p, &plugin_name);
     let result = v.deserialize(MockDeserializerForPluginConfigDeserializeSeed);
     assert!(result.is_err());
     assert_eq!(result.err().unwrap().0, "Plugin not found");
