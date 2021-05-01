@@ -16,11 +16,11 @@ impl<'a> PluginDatabase<'a> {
     }
     pub fn new<'b : 'a>(libs : &'b Libraries) -> PluginDatabase<'a> {
         PluginDatabase {
-            plugins : libs.libs.iter().filter_map(|lib| {
+            plugins : libs.libs.iter().filter_map(|(path, lib)| {
                 match get_plugin_from_library(lib) {
                     Ok(x) => Some((String::from(x.get_name()), x)),
                     Err(y) => {
-                        let lib_name = format!("{:?}", lib);
+                        let lib_name = path.to_string_lossy();
                         match y {
                             PluginLoadingError::MissingVersionInformation => {
                                 eprintln!("{}", gettext!("Failed to load library {}, no version information found.", lib_name));
@@ -46,7 +46,7 @@ impl<'a> PluginDatabase<'a> {
 }
 
 pub struct Libraries {
-    libs : Vec<Library>
+    libs : Vec<(std::path::PathBuf,Library)>
 }
 impl Libraries {
     pub fn load_from_folder(path : &std::path::Path) -> Result<Libraries, std::io::Error> {
@@ -58,8 +58,9 @@ impl Libraries {
                         None
                     },
                     Ok(d) => unsafe {
-                        match libloading::Library::new(d.path()) {
-                            Ok(x) => Some(x),
+                        let p = d.path();
+                        match libloading::Library::new(&p) {
+                            Ok(x) => Some((p,x)),
                             Err(_) => {
                                 eprintln!("{}", gettext!("Failed to load as library: {}", d.path().display()));
                                 None
