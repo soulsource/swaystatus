@@ -532,6 +532,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "swaystatus-pulse"
+version = "0.1.0"
+dependencies = [
+ "erased-serde",
+ "serde",
+ "swaystatus-plugin",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"

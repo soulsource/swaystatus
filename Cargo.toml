@@ -4,4 +4,5 @@ members = [
 	"swaystatus",
 	"swaystatus-plugin",
 	"clock",
+	"pulse"
 ]
