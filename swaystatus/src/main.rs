@@ -105,11 +105,11 @@ fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> 
                 },
                 communication::Message::External{text, element_number} => {
                     handle_message_from_element(&mut texts, &elements[element_number].get_name(), element_number, text);
-                    print_texts(&texts, &main_config);
+                    print_texts(&texts, &main_config, &elements);
                 },
                 communication::Message::ThreadCrash{element_number} => {
                     handle_crash_from_element(&mut texts, &elements[element_number].get_name(), element_number);
-                    print_texts(&texts, &main_config);
+                    print_texts(&texts, &main_config, &elements);
                 }
             }
         }
@@ -172,11 +172,18 @@ fn handle_message_from_element(texts : &mut Vec<String>, plugin : &str, element_
     }
 }
 
-fn print_texts(texts : &[String], settings : &config::SwaystatusMainConfig) {
+fn print_texts(texts : &[String], settings : &config::SwaystatusMainConfig, element_settings : &[config::SwaystatusPluginConfig]) {
     //Once we do more than just printing, we might want a more advanced code here...
     let separators = std::iter::once("").chain(std::iter::repeat(&settings.separator[..]));
-    for (separator, text) in separators.zip(texts) {
-        print!("{}{}",separator,text);
+    let before_texts = element_settings.iter().map(|x| &x.get_non_plugin_settings().before_text);
+    let after_texts = element_settings.iter().map(|x| &x.get_non_plugin_settings().after_text);
+    let text_with_after = texts.iter().zip(after_texts);
+    let complete_text = before_texts.zip(text_with_after);
+
+    let final_iterator = separators.zip(complete_text);
+
+    for (separator, (before,(text,after))) in final_iterator {
+        print!("{}{}{}{}",separator,before,text,after);
     }
     println!(); //Previosly there was an explicit flush here, but printnl should do that for us.
 }

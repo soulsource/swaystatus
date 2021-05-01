@@ -120,6 +120,10 @@ impl<'p> SwaystatusPluginConfig<'p> {
     pub fn get_name(&'p self) -> &'p str {
         &self.plugin
     }
+    pub fn get_non_plugin_settings(&self) -> &SwaystatusElementNonPluginOptions {
+        &self.general
+
+    }
 }
 
 pub enum SwaystatusConfigErrors
