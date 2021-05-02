@@ -5,7 +5,7 @@ use swaystatus_plugin::*;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "Sink")]
-enum Sink {
+pub enum Sink {
     Default,
     Specific {
         sink_name : String
@@ -14,7 +14,7 @@ enum Sink {
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "Format")]
-enum Volume {
+pub enum Volume {
     Off,
     Numeric {
         label : String
@@ -27,7 +27,7 @@ enum Volume {
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "Format")]
-enum Balance {
+pub enum Balance {
     Off,
     Numeric {
         label : String
@@ -42,9 +42,9 @@ enum Balance {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase", default)]
 pub struct PulseVolumeConfig {
-    sink : Sink,
-    volume : Volume,
-    balance : Balance
+    pub sink : Sink,
+    pub volume : Volume,
+    pub balance : Balance
 }
 
 impl Default for PulseVolumeConfig {
