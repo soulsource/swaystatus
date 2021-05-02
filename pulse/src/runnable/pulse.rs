@@ -122,7 +122,10 @@ impl PulseMainLoop {
 impl Drop for PulseMainLoop {
     fn drop(&mut self) {
         if !self.main_loop.is_null() {
-            unsafe { pa_mainloop_free(self.main_loop); }
+            unsafe { 
+                pa_mainloop_quit(self.main_loop, 0);
+                pa_mainloop_free(self.main_loop); 
+            }
         }
         self.main_loop = std::ptr::null_mut();
     }
@@ -139,6 +142,7 @@ impl Drop for PulseMainLoop {
 extern {
     fn pa_mainloop_new() -> *mut PaMainloop;
     fn pa_mainloop_wakeup(_ : *mut PaMainloop);
+    fn pa_mainloop_quit(_ : *mut PaMainloop, retval : c_int);
     fn pa_mainloop_free(_ : *mut PaMainloop);
 
     fn pa_mainloop_get_api(_ : *mut PaMainloop) -> *mut PaMainloopApi;
