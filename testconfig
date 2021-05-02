@@ -5,8 +5,28 @@ separator = ", "
 Plugin = "ClockPlugin"
 
 [Element.Config]
-Format = "%+"
+Format = "%R"
 
 [Element.Config.RefreshRate]
 Synchronization = "UtcSynchronized"
-PerThirtyMinutes = 1800 
+PerThirtyMinutes = 1800
+
+[Element.General]
+BeforeText = ""
+AfterText = ""
+
+[[Element]]
+Plugin = "PulseVolume"
+[Element.Config.Sink]
+Sink = "Default"
+
+[Element.Config.Volume]
+Format = "Numeric"
+label = ""
+
+[Element.Config.Balance]
+Format = "Off"
+
+[Element.General]
+BeforeText = ""
+AfterText = ""

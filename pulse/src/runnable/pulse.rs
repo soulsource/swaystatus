@@ -2,13 +2,19 @@
 //! It is the only place in this plugin that explicitly includes unsafe code.
 
 use std::sync::{Arc, Weak};
+use std::ffi::{c_void, CString};
+use libc::{c_int, size_t};
+use std::os::raw::c_char;
+
 use crate::config::Sink;
 use std::marker::PhantomData;
 
 pub(super) struct Pulse {
     main_loop : Arc<PulseMainLoop>, //Beware: Never ever clone this except for PulseWakeUp!
+    context : *mut PaContext,
 
-    //Pulse is _definitely_ not sync. It is supposed to be Send though.
+    sink_name : Option<String>, //if None, still waiting for default sink name to become known.
+
     marker : PhantomData<std::cell::RefCell<i8>>
 }
 
@@ -19,15 +25,40 @@ unsafe impl Send for Pulse {}
 
 impl Pulse {
     pub fn init(config : &Sink) -> Self {
+        let main_loop = Arc::new(PulseMainLoop::new());
+        let context = if main_loop.is_valid() {
+            let api = main_loop.get_api();
+            if !api.is_null() {
+                let plugin_name = CString::new("Swaystatus Pulse Plugin").expect("Pulse context name couldn't be set");
+                unsafe { pa_context_new(api, plugin_name.as_ptr()) }
+            }
+            else {
+                std::ptr::null_mut()
+            }
+        }
+        else {
+            std::ptr::null_mut()
+        };
+
         //TODO:Use the sink parameter.
         Pulse {
-            //TODO: Initialize main_loop on the pulse-side.
-            main_loop : Arc::new(PulseMainLoop {}),
+            main_loop, 
+            context,
+            sink_name : None,
             marker :PhantomData
         }
     }
     pub fn get_wake_up(&self) -> PulseWakeUp {
         PulseWakeUp { main_loop : Arc::downgrade(&self.main_loop) }
+    }
+    pub fn is_valid(&self) -> bool {
+        self.main_loop.is_valid() && !self.context.is_null()
+    }
+}
+
+impl Drop for Pulse {
+    fn drop(&mut self) {
+        //TODO! Clean up the context.
     }
 }
 
@@ -65,16 +96,51 @@ impl std::fmt::Display for PulseWakeUpError {
 }
 
 struct PulseMainLoop {
-    //TODO
+    main_loop : *mut PaMainloop,
 }
 impl PulseMainLoop {
     //this is intentionally all private. Nobody outside this module should call anything on this.
     fn awaken(&self) {
-        //TODO!
+        if !self.main_loop.is_null() {
+            unsafe { pa_mainloop_wakeup(self.main_loop); }
+        }
+    }
+    fn new() -> Self {
+        unsafe {
+            let pointer = pa_mainloop_new();
+            Self { main_loop : pointer }
+        }
+    }
+    fn is_valid(&self) -> bool {
+        !self.main_loop.is_null()
+    }
+    fn get_api(&self) -> *mut PaMainloopApi {
+        assert!(self.is_valid());
+        unsafe { pa_mainloop_get_api(self.main_loop) }
     }
 }
 impl Drop for PulseMainLoop {
     fn drop(&mut self) {
-        //TODO: if this gets dropped, free the pulse main loop.
+        if !self.main_loop.is_null() {
+            unsafe { pa_mainloop_free(self.main_loop); }
+        }
+        self.main_loop = std::ptr::null_mut();
     }
+}
+
+#[repr(C)] struct PaMainloop { _private: [u8; 0] }
+#[repr(C)] struct PaContext { _private: [u8; 0] }
+
+///While we could in theory wrap the whole API, there's no need for it. We can treat it as an
+///opaque type, because we never call any functions on it.
+#[repr(C)] struct PaMainloopApi { _private: [u8; 0] }
+
+#[link(name = "pulse")]
+extern {
+    fn pa_mainloop_new() -> *mut PaMainloop;
+    fn pa_mainloop_wakeup(_ : *mut PaMainloop);
+    fn pa_mainloop_free(_ : *mut PaMainloop);
+
+    fn pa_mainloop_get_api(_ : *mut PaMainloop) -> *mut PaMainloopApi;
+    fn pa_context_new(_ : *mut PaMainloopApi, name :*const c_char) -> *mut PaContext;
 }

@@ -536,6 +536,7 @@ name = "swaystatus-pulse"
 version = "0.1.0"
 dependencies = [
  "erased-serde",
+ "libc",
  "serde",
  "swaystatus-plugin",
 ]
