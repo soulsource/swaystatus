@@ -89,7 +89,7 @@ fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> 
     // Main everything is ready for the big main loop. Let's spawn the threads!
     if let Err(_e) = thread::scope(|s| {
         signalhandler::handle_signals(s, sender_from_plugins);
-        for runnable in runnables {
+        for mut runnable in runnables {
             s.spawn(move |_| {
                 runnable.run();
             });
