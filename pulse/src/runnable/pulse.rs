@@ -11,11 +11,10 @@ use std::marker::PhantomData;
 
 pub(super) struct Pulse {
     main_loop : Arc<PulseMainLoop>, //Beware: Never ever clone this except for PulseWakeUp!
-    context : *mut PaContext,
-
-    sink_name : Option<String>, //if None, still waiting for default sink name to become known.
-
-    marker : PhantomData<std::cell::RefCell<i8>>
+    
+    //Make sure that Pulse never accidentally gets Sync. That's more of a reminder for myself,
+    //given that Arc<PulseMainLoop> already is not Sync...
+    _marker : PhantomData<std::cell::RefCell<i8>>
 }
 
 //In general it's a really stupid idea to Send Arcs of non-Sync types around.
@@ -26,8 +25,21 @@ unsafe impl Send for Pulse {}
 impl Pulse {
     pub fn init(config : &Sink) -> Self {
         let main_loop = Arc::new(PulseMainLoop::new());
-        let context = if main_loop.is_valid() {
-            let api = main_loop.get_api();
+        //TODO:Use the sink parameter.
+        Pulse {
+            main_loop, 
+            _marker :PhantomData
+        }
+    }
+    pub fn get_wake_up(&self) -> PulseWakeUp {
+        PulseWakeUp { main_loop : Arc::downgrade(&self.main_loop) }
+    }
+    pub fn is_valid(&self) -> bool {
+        self.main_loop.is_valid()
+    }
+    pub fn create_context<'c>(&'c self) -> PulseContext<'c> {
+        let context = if self.main_loop.is_valid() {
+            let api = self.main_loop.get_api();
             if !api.is_null() {
                 let plugin_name = CString::new("Swaystatus Pulse Plugin").expect("Pulse context name couldn't be set");
                 unsafe { pa_context_new(api, plugin_name.as_ptr()) }
@@ -39,26 +51,26 @@ impl Pulse {
         else {
             std::ptr::null_mut()
         };
-
-        //TODO:Use the sink parameter.
-        Pulse {
-            main_loop, 
-            context,
-            sink_name : None,
-            marker :PhantomData
-        }
-    }
-    pub fn get_wake_up(&self) -> PulseWakeUp {
-        PulseWakeUp { main_loop : Arc::downgrade(&self.main_loop) }
-    }
-    pub fn is_valid(&self) -> bool {
-        self.main_loop.is_valid() && !self.context.is_null()
+        PulseContext { context, _marker : PhantomData }
     }
 }
 
-impl Drop for Pulse {
+pub struct PulseContext<'c> {
+    context : *mut PaContext,
+    _marker : PhantomData<&'c PulseMainLoop>
+}
+
+impl<'c> PulseContext<'c> {
+    pub fn is_valid(&self) -> bool {
+        !self.context.is_null()
+    }
+}
+
+impl<'c> Drop for PulseContext<'c> {
     fn drop(&mut self) {
-        //TODO! Clean up the context.
+        if !self.context.is_null() {
+            unsafe {pa_context_unref(self.context)}
+        }
     }
 }
 
@@ -147,4 +159,5 @@ extern {
 
     fn pa_mainloop_get_api(_ : *mut PaMainloop) -> *mut PaMainloopApi;
     fn pa_context_new(_ : *mut PaMainloopApi, name :*const c_char) -> *mut PaContext;
+    fn pa_context_unref(_ : *mut PaContext);
 }
