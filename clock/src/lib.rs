@@ -76,7 +76,7 @@ impl<'c> ClockRunnable<'c> {
 }
 
 impl<'c> SwayStatusModuleRunnable for ClockRunnable<'c> {
-    fn run(&mut self) {
+    fn run(&self) {
         match self.config.refresh_rate {
             ClockRefreshRate::NotSynchronized { seconds } => {
                 self.simple_loop(std::time::Duration::from_secs_f32(seconds.abs()));

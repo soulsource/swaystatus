@@ -28,7 +28,7 @@ impl<'p : 's, 's> PulseVolumeRunnable<'p> {
 }
 
 impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
-    fn run(&mut self) {
+    fn run(&self) {
         //TODO
     }
 }

@@ -156,7 +156,7 @@ pub trait SwayStatusModule {
 ///Will be called in a worker thread.
 pub trait SwayStatusModuleRunnable : Send {
     ///Starts executing this module.
-    fn run(&mut self); 
+    fn run(&self); 
 }
 
 ///Implement this trait on a struct that holds the configuration for a single instance of your

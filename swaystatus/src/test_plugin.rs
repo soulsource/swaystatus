@@ -28,7 +28,7 @@ pub struct TestConfig {
 }
 
 impl SwayStatusModuleRunnable for TestRunnable {
-    fn run(&mut self) {
+    fn run(&self) {
         println!("Running!");
     }
 }
