@@ -6,7 +6,6 @@ use std::ffi::{c_void, CString};
 use libc::{c_int, size_t};
 use std::os::raw::c_char;
 
-use crate::config::Sink;
 use std::marker::PhantomData;
 
 pub(super) struct Pulse {
@@ -23,56 +22,67 @@ pub(super) struct Pulse {
 unsafe impl Send for Pulse {}
 
 impl Pulse {
-    pub fn init(config : &Sink) -> Self {
-        let main_loop = Arc::new(PulseMainLoop::new());
-        //TODO:Use the sink parameter.
-        Pulse {
+    pub fn create() -> Result<Self,MainLoopCreationError> {
+        let main_loop = Arc::new(PulseMainLoop::new()?);
+        Ok(Pulse {
             main_loop, 
             _marker :PhantomData
-        }
+        })
     }
     pub fn get_wake_up(&self) -> PulseWakeUp {
         PulseWakeUp { main_loop : Arc::downgrade(&self.main_loop) }
     }
-    pub fn is_valid(&self) -> bool {
-        self.main_loop.is_valid()
-    }
-    pub fn create_context<'c>(&'c self) -> PulseContext<'c> {
-        let context = if self.main_loop.is_valid() {
-            let api = self.main_loop.get_api();
-            if !api.is_null() {
-                let plugin_name = CString::new("Swaystatus Pulse Plugin").expect("Pulse context name couldn't be set");
-                unsafe { pa_context_new(api, plugin_name.as_ptr()) }
-            }
-            else {
-                std::ptr::null_mut()
-            }
+    pub fn create_context<'c>(&'c self) -> Result<PulseContext<'c>, PulseContextCreationError> {
+        let api = self.main_loop.get_api();
+        if api.is_null() {
+            Err(PulseContextCreationError::FailedToGetPulseApi)
         }
         else {
-            std::ptr::null_mut()
-        };
-        PulseContext { context, _marker : PhantomData }
+            let plugin_name = CString::new("Swaystatus Pulse Plugin").expect("Pulse context name couldn't be set");
+            let context = unsafe { pa_context_new(api, plugin_name.as_ptr()) };
+            if context.is_null() {
+                Err(PulseContextCreationError::ContextNewFailed)
+            }
+            else {
+                Ok(PulseContext { context, _marker : PhantomData })
+            }
+        }
     }
 }
 
 pub struct PulseContext<'c> {
-    context : *mut PaContext,
+    context : *mut PaContext, //Can actually never be null, the nullptr case is handled by create, which returns an Err instead of a PulseContext then.
     _marker : PhantomData<&'c PulseMainLoop>
-}
-
-impl<'c> PulseContext<'c> {
-    pub fn is_valid(&self) -> bool {
-        !self.context.is_null()
-    }
 }
 
 impl<'c> Drop for PulseContext<'c> {
     fn drop(&mut self) {
-        if !self.context.is_null() {
-            unsafe {pa_context_unref(self.context)}
+        unsafe {pa_context_unref(self.context)}
+    }
+}
+
+#[derive(Debug)]
+pub enum PulseContextCreationError {
+    SettingNameFailed,
+    FailedToGetPulseApi,
+    ContextNewFailed
+}
+impl std::fmt::Display for PulseContextCreationError {
+    fn fmt(&self, f : &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PulseContextCreationError::SettingNameFailed => {
+                write!(f, "Pulse Context creation failed, error converting context name to C chars")
+            }
+            PulseContextCreationError::FailedToGetPulseApi => {
+                write!(f, "Pulse Context creation failed, Pulse Main Loop didn't return a valid API")
+            }
+            PulseContextCreationError::ContextNewFailed => {
+                write!(f, "Pulse Context creation failed, Pulse API didn't return a valid context")
+            }
         }
     }
 }
+impl std::error::Error for PulseContextCreationError {}
 
 /// Helper to wake up the Pulseaudio main loop.
 /// This implements Send and Sync, because it's explicitly meant to allow cross-thread
@@ -113,35 +123,41 @@ struct PulseMainLoop {
 impl PulseMainLoop {
     //this is intentionally all private. Nobody outside this module should call anything on this.
     fn awaken(&self) {
-        if !self.main_loop.is_null() {
-            unsafe { pa_mainloop_wakeup(self.main_loop); }
-        }
+        unsafe { pa_mainloop_wakeup(self.main_loop); }
     }
-    fn new() -> Self {
+    fn new() -> Result<Self,MainLoopCreationError> {
         unsafe {
             let pointer = pa_mainloop_new();
-            Self { main_loop : pointer }
+            if pointer.is_null() {
+                Err(MainLoopCreationError{})
+            }
+            else {
+                Ok(Self { main_loop : pointer })
+            }
         }
     }
-    fn is_valid(&self) -> bool {
-        !self.main_loop.is_null()
-    }
     fn get_api(&self) -> *mut PaMainloopApi {
-        assert!(self.is_valid());
         unsafe { pa_mainloop_get_api(self.main_loop) }
     }
 }
 impl Drop for PulseMainLoop {
     fn drop(&mut self) {
-        if !self.main_loop.is_null() {
-            unsafe { 
-                pa_mainloop_quit(self.main_loop, 0);
-                pa_mainloop_free(self.main_loop); 
-            }
+        unsafe { 
+            pa_mainloop_quit(self.main_loop, 0);
+            pa_mainloop_free(self.main_loop); 
         }
         self.main_loop = std::ptr::null_mut();
     }
 }
+
+#[derive(Debug)]
+pub struct MainLoopCreationError {}
+impl std::fmt::Display for MainLoopCreationError {
+    fn fmt(&self, f : &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Failed to create Pulse Main loop, PulseAudio returned a null pointer.")
+    }
+}
+impl std::error::Error for MainLoopCreationError {}
 
 #[repr(C)] struct PaMainloop { _private: [u8; 0] }
 #[repr(C)] struct PaContext { _private: [u8; 0] }

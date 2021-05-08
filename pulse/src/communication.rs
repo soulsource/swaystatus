@@ -9,11 +9,11 @@ pub enum MessagesFromMain {
 
 pub struct SenderForMain {
     sender : Sender<MessagesFromMain>,
-    pulse_waker : PulseWakeUp
+    pulse_waker : Option<PulseWakeUp>
 }
 
 impl<'p> SenderForMain {
-    pub fn new(sender : Sender<MessagesFromMain>, pulse_waker : PulseWakeUp) -> Self {
+    pub fn new(sender : Sender<MessagesFromMain>, pulse_waker : Option<PulseWakeUp>) -> Self {
         SenderForMain{
             sender,
             pulse_waker
@@ -24,7 +24,7 @@ impl<'p> SenderForMain {
         if let Ok(_) = self.sender.send(message) {
             //The cool thing about pulse using poll() is that poll() also wakes up if started after
             //the actual wake up call. So no need to worry about races, this is inherently sane!
-            self.pulse_waker.wake_up()?;
+            self.pulse_waker.as_ref().ok_or(PluginCommunicationError {})?.wake_up()?;
             Ok(())
         }
         else {
