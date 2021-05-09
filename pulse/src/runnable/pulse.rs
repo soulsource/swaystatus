@@ -5,6 +5,7 @@ use std::sync::{Arc, Weak};
 use std::ffi::{c_void, CString};
 use libc::{c_int, size_t};
 use std::os::raw::c_char;
+use std::convert::TryFrom;
 
 use std::marker::PhantomData;
 
@@ -32,8 +33,17 @@ impl Pulse {
     pub fn get_wake_up(&self) -> PulseWakeUp {
         PulseWakeUp { main_loop : Arc::downgrade(&self.main_loop) }
     }
-    pub fn create_context<'c>(&'c self) -> Result<PulseContext<'c>, PulseContextCreationError> {
-        let api = self.main_loop.get_api();
+    
+}
+
+pub(super) struct PulseContext<'c> {
+    context : *mut PaContext, //Can actually never be null, the nullptr case is handled by create, which returns an Err instead of a PulseContext then.
+    main : &'c Pulse 
+}
+
+impl<'c> PulseContext<'c> {
+    pub(super) fn create<'m>(pulse : &'m Pulse) -> Result<PulseContext<'m>, PulseContextCreationError> {
+        let api = pulse.main_loop.get_api();
         if api.is_null() {
             Err(PulseContextCreationError::FailedToGetPulseApi)
         }
@@ -44,15 +54,10 @@ impl Pulse {
                 Err(PulseContextCreationError::ContextNewFailed)
             }
             else {
-                Ok(PulseContext { context, _marker : PhantomData })
+                Ok(PulseContext { context, main : pulse})
             }
         }
     }
-}
-
-pub struct PulseContext<'c> {
-    context : *mut PaContext, //Can actually never be null, the nullptr case is handled by create, which returns an Err instead of a PulseContext then.
-    _marker : PhantomData<&'c PulseMainLoop>
 }
 
 impl<'c> Drop for PulseContext<'c> {
@@ -158,6 +163,41 @@ impl std::fmt::Display for MainLoopCreationError {
     }
 }
 impl std::error::Error for MainLoopCreationError {}
+
+pub(super) struct SinkHandle {
+    sink: CString
+}
+
+impl TryFrom<&str> for SinkHandle {
+    type Error = std::ffi::NulError;
+    fn try_from(s : &str) -> Result<Self, Self::Error> {
+        let converted = std::ffi::CString::new(s)?;
+        Ok(SinkHandle {
+            sink : converted
+        })
+    }
+}
+
+pub(super) struct IterationResult {
+    pub default_sink : Option<SinkHandle>,
+    pub volume : Option<Volume>,
+    pub state : Option<PaContextState>
+}
+
+pub(super) struct Volume {
+    pub volume : f32,
+    pub balance : f32
+}
+
+#[repr(C)] pub(super) enum PaContextState {
+    Unconnected,
+    Connecting,
+    Authorizing,
+    SettingName,
+    Ready,
+    Failed,
+    Terminated
+}
 
 #[repr(C)] struct PaMainloop { _private: [u8; 0] }
 #[repr(C)] struct PaContext { _private: [u8; 0] }
