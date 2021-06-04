@@ -9,7 +9,7 @@ Format = "%R"
 
 [Element.Config.RefreshRate]
 Synchronization = "UtcSynchronized"
-PerThirtyMinutes = 1800
+PerThirtyMinutes = 30
 
 [Element.General]
 BeforeText = ""

@@ -31,103 +31,135 @@ impl<'p : 's, 's> PulseVolumeRunnable<'p> {
         self.to_main.send_update(Err(PluginError::PrintToStdErr(err.to_string()))).expect("Tried to tell main thread that an error occured. Main thread isn't listening any more.");
     }
 
+    fn send_updated_volume_to_main(&self, volume : &pulse::Volume) -> Result<(),PluginCommunicationError> {
+        self.to_main.send_update(Ok(self.format_volume(volume)))
+    }
+
+    fn format_volume(&self, volume : &pulse::Volume) -> String {
+        format!("{}",volume.volume)
+    }
 }
 
 impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
     fn run(&self) {
-        let pulse = match &self.pulse {
-            Err(x) => {
-                self.send_error_to_main(x);
-                return;
-            }
-            Ok(x) => x
-        };
-        let context = match PulseContext::create(pulse) {
-            Err(x) => {
-                self.send_error_to_main(x);
-                return;
-            }
-            Ok(x) => x
-        };
-        let mut context_state = PaContextState::Unconnected;
-        let mut curr_default_sink = None;
-        let mut curr_volume = None;
-        let mut sink_we_care_about = match self.config.sink {
-            crate::config::Sink::Default => { None }
-            crate::config::Sink::Specific { sink_name } => { 
-                Some(match SinkHandle::try_from(&*sink_name) {
-                    Ok(x) => {x}
-                    Err(e) => {
-                        self.send_error_to_main(e);
-                        return;
-                    }
-                }) 
-            }
-        };
-        loop {
-            match context_state {
-                PaContextState::Unconnected => { 
-                    if let crate::config::Sink::Default = self.config.sink {
-                        sink_we_care_about = None; 
-                    }
-                    context.connect(); 
+        'outer : loop {
+            let pulse = match &self.pulse {
+                Err(x) => {
+                    self.send_error_to_main(x);
+                    return;
                 }
-                PaContextState::Failed | PaContextState::Terminated => { 
-                    match self.from_main.recv_timeout(std::time::Duration::from_secs(1)) {
-                        Ok(x) => {
-                            if let MessagesFromMain::Quit = x {
-                                break;
-                            }
-                        }
+                Ok(x) => x
+            };
+            let mut scratch = pulse::ContextScratch::default();
+            let mut context = match PulseContext::create(pulse, &mut scratch) {
+                Err(x) => {
+                    self.send_error_to_main(x);
+                    return;
+                }
+                Ok(x) => x
+            };
+            let mut curr_default_sink = None;
+            let mut curr_volume = None;
+            let mut sink_we_care_about = match &self.config.sink {
+                crate::config::Sink::Default => { None }
+                crate::config::Sink::Specific { sink_name } => { 
+                    Some(match SinkHandle::try_from(sink_name as &str) {
+                        Ok(x) => {x}
                         Err(e) => {
-                            if let RecvTimeoutError::Disconnected = e {
-                                break;
+                            self.send_error_to_main(e);
+                            return;
+                        }
+                    }) 
+                }
+            };
+            loop {
+                match context.get_state() {
+                    PaContextState::Unconnected => { 
+                        if let crate::config::Sink::Default = &self.config.sink {
+                            sink_we_care_about = None; 
+                        }
+                        if let Err(e) = context.connect_and_set_callbacks() {
+                            self.send_error_to_main(e);
+                            match self.from_main.recv_timeout(std::time::Duration::from_secs(1)) {
+                                Ok(x) => {
+                                    if let MessagesFromMain::Quit = x {
+                                        break 'outer;
+                                    }
+                                }
+                                Err(e) => {
+                                    if let RecvTimeoutError::Disconnected = e {
+                                        break 'outer;
+                                    }
+                                }
                             }
                         }
                     }
-                    if let crate::config::Sink::Default = self.config.sink {
-                        sink_we_care_about = None;
+                    PaContextState::Failed | PaContextState::Terminated => { 
+                        //context is dead. Wait a second, and start over.
+                        self.to_main.send_update(Err(PluginError::ShowInsteadOfText(String::from("Context died")))).expect("Tried to tell main thread that pulse context died. Main thread isn't listening.");
+                        self.to_main.send_update(Err(PluginError::PrintToStdErr(String::from("Pulseaudio context entered either the Terminated or Failed state. Creating a new context and retrying")))).expect("Tried to tell main thread that pulse context died. Main thread isn't listening.");
+                        match self.from_main.recv_timeout(std::time::Duration::from_secs(1)) {
+                            Ok(x) => {
+                                if let MessagesFromMain::Quit = x {
+                                    break 'outer;
+                                }
+                            }
+                            Err(e) => {
+                                if let RecvTimeoutError::Disconnected = e {
+                                    break 'outer;
+                                }
+                            }
+                        }
+                        continue 'outer;
                     }
-                    context.connect();
-                }
-                PaContextState::Ready => {
-                    if sink_we_care_about.is_none() {
-                        //this may trigger several redundant refreshes, but it _should_ only happen
-                        //during startup, so we don't really care.
-                        context.refresh_default_sink();
-                    }
-                }
-                _ => {}
-            }
-            
-            let Pulse::IterationResult { default_sink, volume, state } = context.iterate(sink_we_care_about);
-            context_state = state.unwrap_or(context_state);
-            if default_sink.is_some() && default_sink != curr_default_sink {
-                curr_default_sink = default_sink;
-                if let crate::config::Sink::Default = self.config.sink {
-                    sink_we_care_about = curr_default_sink;
-                    context.refresh_volume();
-                }
-            }
-            if volume.is_some() && volume != curr_volume {
-                curr_volume = volume;
-                self.send_updated_volume_to_main(curr_volume);
-            }
-            match self.from_main.try_recv() {
-                Ok(x) => match x {
-                    MessagesFromMain::Quit => {
-                        break;
-                    }
-                    MessagesFromMain::Refresh => {
-                        context.refresh_volume();
-                        if let crate::config::Sink::Default = self.config.sink {
+                    PaContextState::Ready => {
+                        if sink_we_care_about.is_none() {
+                            //this may trigger several redundant refreshes, but it _should_ only happen
+                            //during startup, so we don't really care.
                             context.refresh_default_sink();
                         }
                     }
+                    _ => {}
                 }
-                Err(e) => {
-                    if let TryRecvError::Disconnected = e {
-                        break;
+
+                let iteration_result = context.iterate(&sink_we_care_about);
+                if let Err(e) = iteration_result {
+                   self.send_error_to_main(e);
+                   break 'outer;
+                }
+                
+                let pulse::IterationResult { default_sink, volume } = iteration_result.unwrap();
+                if default_sink.is_some() && default_sink != curr_default_sink {
+                    curr_default_sink = default_sink;
+                    if let crate::config::Sink::Default = self.config.sink {
+                        sink_we_care_about = curr_default_sink.clone();
+                        if let Some(s) = &sink_we_care_about {
+                            context.refresh_volume(s);
+                        }
+                    }
+                }
+                if volume.is_some() && volume != curr_volume {
+                    curr_volume = volume;
+                    self.send_updated_volume_to_main(curr_volume.as_ref().unwrap()).expect("Tried to inform main thread about volume update. Main thread isn't listening.");
+                }
+                match self.from_main.try_recv() {
+                    Ok(x) => match x {
+                        MessagesFromMain::Quit => {
+                            break 'outer;
+                        }
+                        MessagesFromMain::Refresh => {
+                            if let Some(s) = &sink_we_care_about {
+                                context.refresh_volume(s);
+                            }
+                            if let crate::config::Sink::Default = self.config.sink {
+                                context.refresh_default_sink();
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        if let TryRecvError::Disconnected = e {
+                            break 'outer;
+                        }
                     }
                 }
             }
