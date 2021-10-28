@@ -43,7 +43,7 @@ impl MsgMainToModule for SenderForMain {
 }
 
 impl From<PulseWakeUpError> for PluginCommunicationError {
-    fn from(error : PulseWakeUpError) -> Self {
+    fn from(_error : PulseWakeUpError) -> Self {
         PluginCommunicationError {}
     }
 }

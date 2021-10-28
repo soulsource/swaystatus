@@ -48,13 +48,17 @@ impl<'c> PulseContext<'c> {
             Err(PulseContextCreationError::FailedToGetPulseApi)
         }
         else {
-            let plugin_name = CString::new("Swaystatus Pulse Plugin").expect("Pulse context name couldn't be set");
-            let context = unsafe { pa_context_new(api, plugin_name.as_ptr()) };
-            if context.is_null() {
-                Err(PulseContextCreationError::ContextNewFailed)
+            if let Ok(plugin_name) = CString::new("Swaystatus Pulse Plugin") {
+                let context = unsafe { pa_context_new(api, plugin_name.as_ptr()) };
+                if context.is_null() {
+                    Err(PulseContextCreationError::ContextNewFailed)
+                }
+                else {
+                    Ok(PulseContext { context, scratch, main : pulse})
+                }
             }
             else {
-                Ok(PulseContext { context, scratch, main : pulse})
+                Err(PulseContextCreationError::SettingNameFailed)
             }
         }
     }
@@ -92,7 +96,7 @@ impl<'c> PulseContext<'c> {
         unsafe {pa_operation_unref(pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch));}
     }
 
-    fn on_context_state_change(context : *mut PaContext, scratch : *mut ContextScratch) {
+    extern fn on_context_state_change(context : *mut PaContext, scratch : *mut ContextScratch) {
         unsafe {
             match pa_context_get_state(context) {
                 PaContextState::Ready => {
@@ -131,8 +135,8 @@ impl<'c> PulseContext<'c> {
             if let Some(s) = &(*scratch).sink_we_care_about {
                 if s.sink.as_c_str() == CStr::from_ptr((*sink_info).sink_name) {
                     let avg_volume = pa_cvolume_avg(&(*sink_info).volume);
-                    const norm : u32 = 0x10000;
-                    let volume = (avg_volume as f32) / (norm as f32);
+                    const NORM : u32 = 0x10000;
+                    let volume = (avg_volume as f32) / (NORM as f32);
                     let balance = pa_cvolume_get_balance(&(*sink_info).volume, &(*sink_info).channel_map);
                     let muted = (*sink_info).mute != 0;
 
@@ -366,6 +370,7 @@ impl Default for ContextScratch {
     }
 }
 
+#[allow(dead_code)] //this is not dead code, but it seems the compiler doesn't understand the usage in FFI...
 #[repr(C)] pub(super) enum PaContextState {
     Unconnected,
     Connecting,
@@ -376,6 +381,7 @@ impl Default for ContextScratch {
     Terminated
 }
 
+#[allow(dead_code)] //this is partially dead code, but the unused enum values are kept for readability reasons.
 #[repr(C)] enum PaContextFlags {
     NoFlags = 0,
     NoAutoSpawn = 1,
@@ -459,7 +465,7 @@ impl Default for ContextScratch {
 
 type PaContextSuccessCb = fn(*mut PaContext, c_int, *mut ContextScratch);
 type PaContextSubscribeCb = fn(*mut PaContext,c_int,u32,*mut ContextScratch);
-type PaContextStateCb = fn(*mut PaContext, *mut ContextScratch);
+type PaContextStateCb = extern fn(*mut PaContext, *mut ContextScratch);
 type PaSinkInfoCb = fn(*mut PaContext, *const PaSinkInfo, c_int, *mut ContextScratch);
 type PaServerInfoCb = fn(*mut PaContext, *const PaServerInfo, *mut ContextScratch);
 
