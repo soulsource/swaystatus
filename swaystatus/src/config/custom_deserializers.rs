@@ -106,7 +106,7 @@ impl<'de, 'a, 'b> DeserializeSeed<'de> for PluginConfigDeserializeSeed<'a, 'b> {
             Some(x) => x,
             None => return Err(de::Error::custom("Plugin not found"))
         };
-        let mut erased_deserializer = erased_serde::Deserializer::erase(deserializer);
+        let mut erased_deserializer = <dyn erased_serde::Deserializer>::erase(deserializer);
         plugin.deserialize_config(&mut erased_deserializer).map_err(Error::custom)
     }
 }
