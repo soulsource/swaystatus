@@ -96,7 +96,7 @@ impl<'c> PulseContext<'c> {
         unsafe {pa_operation_unref(pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch as *mut ContextScratch as *mut c_void));}
     }
 
-    extern fn on_context_state_change(context : *mut PaContext, scratch : *mut c_void) {
+    extern "C" fn on_context_state_change(context : *mut PaContext, scratch : *mut c_void) {
         unsafe {
             match pa_context_get_state(context) {
                 PaContextState::Ready => {
@@ -108,7 +108,7 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    extern fn on_context_event(context : *mut PaContext,event_type : c_int,index: u32,scratch : *mut c_void) {
+    extern "C" fn on_context_event(context : *mut PaContext,event_type : c_int,index: u32,scratch : *mut c_void) {
         assert!(!context.is_null());
         assert!(!scratch.is_null());
         unsafe {
@@ -127,7 +127,7 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    extern fn on_sink_info_received(_context : *mut PaContext, sink_info : *const PaSinkInfo, _eol : c_int, scratch_void : *mut c_void) {
+    extern "C" fn on_sink_info_received(_context : *mut PaContext, sink_info : *const PaSinkInfo, _eol : c_int, scratch_void : *mut c_void) {
         if sink_info.is_null() {
             return;
         }
@@ -147,7 +147,7 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    extern fn on_server_info_received(_context : *mut PaContext, server_info : *const PaServerInfo, scratch : *mut c_void) {
+    extern "C" fn on_server_info_received(_context : *mut PaContext, server_info : *const PaServerInfo, scratch : *mut c_void) {
         if server_info.is_null() {
             return;
         }
@@ -464,14 +464,14 @@ impl Default for ContextScratch {
 ///If we were to allow auto-spawning, we would need to actually implement this...
 #[repr(C)] struct PaSpawnApi { _private: [u8; 0] }
 
-type PaContextSuccessCb = extern fn(*mut PaContext, c_int, *mut c_void);
-type PaContextSubscribeCb = extern fn(*mut PaContext,c_int,u32,*mut c_void);
-type PaContextStateCb = extern fn(*mut PaContext, *mut c_void);
-type PaSinkInfoCb = extern fn(*mut PaContext, *const PaSinkInfo, c_int, *mut c_void);
-type PaServerInfoCb = extern fn(*mut PaContext, *const PaServerInfo, *mut c_void);
+type PaContextSuccessCb = extern "C" fn(*mut PaContext, c_int, *mut c_void);
+type PaContextSubscribeCb = extern "C" fn(*mut PaContext,c_int,u32,*mut c_void);
+type PaContextStateCb = extern "C" fn(*mut PaContext, *mut c_void);
+type PaSinkInfoCb = extern "C" fn(*mut PaContext, *const PaSinkInfo, c_int, *mut c_void);
+type PaServerInfoCb = extern "C" fn(*mut PaContext, *const PaServerInfo, *mut c_void);
 
 #[link(name = "pulse")]
-extern {
+extern "C" {
     #[must_use]
     fn pa_mainloop_new() -> *mut PaMainloop;
     fn pa_mainloop_wakeup(_ : *mut PaMainloop);
