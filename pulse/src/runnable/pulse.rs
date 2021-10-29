@@ -2,7 +2,7 @@
 //! It is the only place in this plugin that explicitly includes unsafe code.
 
 use std::sync::{Arc, Weak};
-use std::ffi::{CString, CStr};
+use std::ffi::{CString, CStr, c_void};
 use std::os::raw::{c_int, c_char};
 use std::convert::TryFrom;
 
@@ -77,7 +77,7 @@ impl<'c> PulseContext<'c> {
     }
     pub(super) fn connect_and_set_callbacks(&mut self) -> Result<(), PulseContextConnectError> {
         unsafe {
-            pa_context_set_state_callback(self.context,Some(Self::on_context_state_change),self.scratch);
+            pa_context_set_state_callback(self.context,Some(Self::on_context_state_change),self.scratch as *mut ContextScratch as *mut c_void);
             let connect_result = pa_context_connect(self.context,std::ptr::null(),PaContextFlags::NoAutoSpawnNoFail,std::ptr::null());
             if connect_result == 0 {
                 Ok(())
@@ -89,14 +89,14 @@ impl<'c> PulseContext<'c> {
     }
 
     pub(super) fn refresh_default_sink(&mut self) {
-        unsafe {pa_operation_unref(pa_context_get_server_info(self.context,Some(Self::on_server_info_received),self.scratch)); }
+        unsafe {pa_operation_unref(pa_context_get_server_info(self.context,Some(Self::on_server_info_received),self.scratch as *mut ContextScratch as *mut c_void)); }
     }
 
     pub(super) fn refresh_volume(&mut self, sink : &SinkHandle) {
-        unsafe {pa_operation_unref(pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch));}
+        unsafe {pa_operation_unref(pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch as *mut ContextScratch as *mut c_void));}
     }
 
-    extern fn on_context_state_change(context : *mut PaContext, scratch : *mut ContextScratch) {
+    extern fn on_context_state_change(context : *mut PaContext, scratch : *mut c_void) {
         unsafe {
             match pa_context_get_state(context) {
                 PaContextState::Ready => {
@@ -108,17 +108,17 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    fn on_context_event(context : *mut PaContext,event_type : c_int,index: u32,scratch : *mut ContextScratch) {
+    extern fn on_context_event(context : *mut PaContext,event_type : c_int,index: u32,scratch : *mut c_void) {
         assert!(!context.is_null());
         assert!(!scratch.is_null());
         unsafe {
             let facility = 0x000f & event_type;
             match facility {
                 0x0 /* SINK */ => {
-                    pa_operation_unref(pa_context_get_sink_info_by_index(context,index,Some(Self::on_sink_info_received),scratch));
+                    pa_operation_unref(pa_context_get_sink_info_by_index(context,index,Some(Self::on_sink_info_received),scratch as *mut c_void));
                 }
                 0x7 /* SERVER */ => {
-                    pa_operation_unref(pa_context_get_server_info(context,Some(Self::on_server_info_received),scratch));
+                    pa_operation_unref(pa_context_get_server_info(context,Some(Self::on_server_info_received),scratch as *mut c_void));
                 }
                 _ /* should not happen */ => {
                     assert!(false);
@@ -127,11 +127,12 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    fn on_sink_info_received(_context : *mut PaContext, sink_info : *const PaSinkInfo, _eol : c_int, scratch : *mut ContextScratch) {
+    extern fn on_sink_info_received(_context : *mut PaContext, sink_info : *const PaSinkInfo, _eol : c_int, scratch_void : *mut c_void) {
         if sink_info.is_null() {
             return;
         }
         unsafe {
+            let scratch = scratch_void as *mut ContextScratch;
             if let Some(s) = &(*scratch).sink_we_care_about {
                 if s.sink.as_c_str() == CStr::from_ptr((*sink_info).sink_name) {
                     let avg_volume = pa_cvolume_avg(&(*sink_info).volume);
@@ -146,12 +147,12 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    fn on_server_info_received(_context : *mut PaContext, server_info : *const PaServerInfo, scratch : *mut ContextScratch) {
+    extern fn on_server_info_received(_context : *mut PaContext, server_info : *const PaServerInfo, scratch : *mut c_void) {
         if server_info.is_null() {
             return;
         }
         unsafe {
-            (*scratch).default_sink= Some(SinkHandle::from(CStr::from_ptr((*server_info).default_sink_name)));
+            (*(scratch as *mut ContextScratch)).default_sink= Some(SinkHandle::from(CStr::from_ptr((*server_info).default_sink_name)));
         }
     }
 }
@@ -463,11 +464,11 @@ impl Default for ContextScratch {
 ///If we were to allow auto-spawning, we would need to actually implement this...
 #[repr(C)] struct PaSpawnApi { _private: [u8; 0] }
 
-type PaContextSuccessCb = fn(*mut PaContext, c_int, *mut ContextScratch);
-type PaContextSubscribeCb = fn(*mut PaContext,c_int,u32,*mut ContextScratch);
-type PaContextStateCb = extern fn(*mut PaContext, *mut ContextScratch);
-type PaSinkInfoCb = fn(*mut PaContext, *const PaSinkInfo, c_int, *mut ContextScratch);
-type PaServerInfoCb = fn(*mut PaContext, *const PaServerInfo, *mut ContextScratch);
+type PaContextSuccessCb = extern fn(*mut PaContext, c_int, *mut c_void);
+type PaContextSubscribeCb = extern fn(*mut PaContext,c_int,u32,*mut c_void);
+type PaContextStateCb = extern fn(*mut PaContext, *mut c_void);
+type PaSinkInfoCb = extern fn(*mut PaContext, *const PaSinkInfo, c_int, *mut c_void);
+type PaServerInfoCb = extern fn(*mut PaContext, *const PaServerInfo, *mut c_void);
 
 #[link(name = "pulse")]
 extern {
@@ -484,17 +485,17 @@ extern {
     fn pa_context_unref(_ : *mut PaContext);
     fn pa_context_get_state(_ : *mut PaContext) -> PaContextState;
     fn pa_context_connect(_: *mut PaContext, server : *const c_char, flags : PaContextFlags, api : *const PaSpawnApi) -> c_int;
-    fn pa_context_set_state_callback(_: *mut PaContext, callback: Option<PaContextStateCb>, scratch : *mut ContextScratch);
-    fn pa_context_set_subscribe_callback(_: *mut PaContext,callback : Option<PaContextSubscribeCb>,scratch : *mut ContextScratch);
+    fn pa_context_set_state_callback(_: *mut PaContext, callback: Option<PaContextStateCb>, scratch : *mut c_void);
+    fn pa_context_set_subscribe_callback(_: *mut PaContext,callback : Option<PaContextSubscribeCb>,scratch : *mut c_void);
     #[must_use]
-    fn pa_context_subscribe(_: *mut PaContext, subscription_mask : c_int, callback : Option<PaContextSuccessCb>, scratch : *mut ContextScratch) -> *mut PaOperation;
+    fn pa_context_subscribe(_: *mut PaContext, subscription_mask : c_int, callback : Option<PaContextSuccessCb>, scratch : *mut c_void) -> *mut PaOperation;
     fn pa_operation_unref(operation : *mut PaOperation);
 
     #[must_use]
-    fn pa_context_get_sink_info_by_index(_: *mut PaContext, sink_index : u32, callback : Option<PaSinkInfoCb>, scratch : *mut ContextScratch) -> *mut PaOperation;
-    fn pa_context_get_sink_info_by_name(_: *mut PaContext, sink : *const c_char, callback : Option<PaSinkInfoCb>, scratch : *mut ContextScratch) -> *mut PaOperation;
+    fn pa_context_get_sink_info_by_index(_: *mut PaContext, sink_index : u32, callback : Option<PaSinkInfoCb>, scratch : *mut c_void) -> *mut PaOperation;
+    fn pa_context_get_sink_info_by_name(_: *mut PaContext, sink : *const c_char, callback : Option<PaSinkInfoCb>, scratch : *mut c_void) -> *mut PaOperation;
     #[must_use]
-    fn pa_context_get_server_info(_: *mut PaContext, callback : Option<PaServerInfoCb>, scratch : *mut ContextScratch) -> *mut PaOperation;
+    fn pa_context_get_server_info(_: *mut PaContext, callback : Option<PaServerInfoCb>, scratch : *mut c_void) -> *mut PaOperation;
 
     fn pa_cvolume_avg(volume : *const PaCVolume) -> u32;
     fn pa_cvolume_get_balance(volume : *const PaCVolume, channel_map : *const PaChannelMap) -> f32;
