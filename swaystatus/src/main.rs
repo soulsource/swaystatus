@@ -194,8 +194,7 @@ fn handle_crash_from_element(texts : &mut Vec<String>, name : &str, element_numb
 }
 
 fn print_plugin_load_error(e : std::io::Error, plugin_path : &std::path::Path) {
-    eprintln!("{} {}", gettext!("Tried to load plugins from folder \"{}\", but failed. You might
-               want to set a plugin directory on the command line. The actual error was:", plugin_path.display()), e);
+    eprintln!("{} {}", gettext!("Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:", plugin_path.display()), e);
 }
 
 fn print_sample_config(plugin_path : &std::path::Path) {
