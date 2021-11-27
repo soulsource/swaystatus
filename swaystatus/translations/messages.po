@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-19 19:21+0000\n"
+"POT-Creation-Date: 2021-11-27 11:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,79 +17,91 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: swaystatus/src/plugin_database/mod.rs:26
+#: ../src/plugin_database/mod.rs:26
 msgid "Failed to load library {}, no version information found."
 msgstr ""
 
-#: swaystatus/src/plugin_database/mod.rs:29
+#: ../src/plugin_database/mod.rs:29
 msgid "Failed to load library {}, it was built with the wrong plugin version. Expected version {}, found version {}"
 msgstr ""
 
-#: swaystatus/src/plugin_database/mod.rs:32
+#: ../src/plugin_database/mod.rs:32
 msgid "Failed to load library {}, it was built with a different Rust version. Since there is no ABI stability guaranteed, this safeguard is required. Please make sure this program and all plugins use the same compiler version. Expected the Rust version {}, found version {}"
 msgstr ""
 
-#: swaystatus/src/plugin_database/mod.rs:36
+#: ../src/plugin_database/mod.rs:36
 msgid "Failed to load library {}, it does not export the _swaystatus_module_create() function."
 msgstr ""
 
-#: swaystatus/src/plugin_database/mod.rs:57
+#: ../src/plugin_database/mod.rs:57
 msgid "File I/O error while iterating libraries: {}"
 msgstr ""
 
-#: swaystatus/src/plugin_database/mod.rs:64
+#: ../src/plugin_database/mod.rs:65
 msgid "Failed to load as library: {}"
 msgstr ""
 
-#: swaystatus/src/communication/mod.rs:42
+#: ../src/communication/mod.rs:42
 msgid "I, element {}, tried to inform the main thread that I crashed. However the main thread isn't listening any more. This should be impossible, but well... Also, it's not critical enough to halt the whole program..."
 msgstr ""
 
-#: swaystatus/src/signalhandler/mod.rs:19
+#: ../src/signalhandler/mod.rs:19
 msgid "Failed to register signal handler. Since without signal handler there's no proper way to cleanly exit any plugins, we bail now."
 msgstr ""
 
-#: swaystatus/src/signalhandler/mod.rs:34
+#: ../src/signalhandler/mod.rs:34
 msgid "Message handler failed to send a message to main thread. This is supposed to be impossible. In any case it's a critical error."
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:19
+#: ../src/commandline/mod.rs:30
 msgid "A simple status text app, inspired by i3status"
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:24
+#: ../src/commandline/mod.rs:35
 msgid "Prints help information."
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:30
+#: ../src/commandline/mod.rs:41
 msgid "Prints version information."
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:36
+#: ../src/commandline/mod.rs:47
 msgid "FILE"
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:37
+#: ../src/commandline/mod.rs:48
 msgid "Path to the configuration file"
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:43
+#: ../src/commandline/mod.rs:54
 msgid "FOLDER"
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:44
+#: ../src/commandline/mod.rs:55
 msgid "Directory from which the plugins should be loaded"
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:49
+#: ../src/commandline/mod.rs:61
 msgid "Prints a sample config file. Beware that the contents of the sample file depend on the loaded plugins, so don't forget to supply the plugins parameter as needed."
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:51
+#: ../src/commandline/mod.rs:68
+msgid "PLUGINS"
+msgstr ""
+
+#: ../src/commandline/mod.rs:69
+msgid "Prints plugin help messages. Either for a given list of plugins, or if no list given, for all loadable plugins."
+msgstr ""
+
+#: ../src/commandline/mod.rs:77
+msgid "Prints a list of plugin names in the plugin folder."
+msgstr ""
+
+#: ../src/commandline/mod.rs:79
 msgid "If no config path is given, the code looks for the \"swaystatus/config\" file in your XDG config folder (typically \"$HOME/.config/\"). If that lookup fails, loading of \"/etc/swaystatus/config\" is attempted. Similarly, if no plugin folder is given, first the existence of a folder named \"$HOME/.local/lib/swaystatus\" is checked. If this folder does not exist, a default path set at compile time is used, which in your case is \"{}\"."
 msgstr ""
 
-#: swaystatus/src/commandline/mod.rs:52
+#: ../src/commandline/mod.rs:80
 msgid "{before-help}{bin} {version}\n"
 "{author}\n"
 "\n"
@@ -106,11 +118,7 @@ msgid "{before-help}{bin} {version}\n"
 "{after-help}"
 msgstr ""
 
-#: swaystatus/src/main.rs:37
-msgid "Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:"
-msgstr ""
-
-#: swaystatus/src/main.rs:55
+#: ../src/main.rs:66
 msgid "No elements set up in configuration. Nothing to display."
 msgstr ""
 
@@ -118,34 +126,46 @@ msgstr ""
 #. is. The documentation only mentions that unwinding across C functions doesn't work, but
 #. that seems to also be true for dynamically loaded Rust libs... That's why we can only
 #. print a general error here.
-#: swaystatus/src/main.rs:112
+#: ../src/main.rs:123
 msgid "At least one of the plugins panicked. For details please check the (hopefully existing) previous error messages."
 msgstr ""
 
-#: swaystatus/src/main.rs:124
+#: ../src/main.rs:135
 msgid "The configuration file could not be read. Nothing to do."
 msgstr ""
 
-#: swaystatus/src/main.rs:127
+#: ../src/main.rs:138
 msgid "The parser for the config file returned an error: {}"
 msgstr ""
 
-#: swaystatus/src/main.rs:137
+#: ../src/main.rs:148
 msgid "Tried to tell a plugin to quit, but that plugin seems to no longer listen to messages. Either that plugin has already terminated, or it's stuck. In the latter case a clean exit is impossible, you'll need to kill this process. The offending element is element number {} from plugin {}."
 msgstr ""
 
-#: swaystatus/src/main.rs:144
+#: ../src/main.rs:155
 msgid "Tried to tell a plugin to refresh, but it doesn't listen any more. Either the plugin already terminated, or it is stuck. The offending element is element number {} from plugin {}."
 msgstr ""
 
-#: swaystatus/src/main.rs:155 swaystatus/src/main.rs:157
+#: ../src/main.rs:166 ../src/main.rs:168
 msgid "Element number {} (plugin: {}) sent an error message: {}"
 msgstr ""
 
-#: swaystatus/src/main.rs:174
+#: ../src/main.rs:192
 msgid "<plugin crashed>"
 msgstr ""
 
-#: swaystatus/src/main.rs:175
+#: ../src/main.rs:193
 msgid "The plugin {} crashed while displaying element number {}. Please see the plugin's panic message above for details."
+msgstr ""
+
+#: ../src/main.rs:197
+msgid "Tried to load plugins from folder \"{}\", but failed. You might want to set a plugin directory on the command line. The actual error was:"
+msgstr ""
+
+#: ../src/main.rs:239 ../src/main.rs:246
+msgid "Plugin: \"{}\""
+msgstr ""
+
+#: ../src/main.rs:251
+msgid "Plugin {} not found."
 msgstr ""
