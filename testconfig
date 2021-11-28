@@ -23,6 +23,7 @@ Sink = "Default"
 [Element.Config.Volume]
 Format = "Numeric"
 Label = ""
+DecimalDigits = 2
 
 [Element.Config.Balance]
 Format = "Binned"

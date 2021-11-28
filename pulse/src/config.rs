@@ -23,7 +23,9 @@ enum FormatableVolume<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> {
     Off,
     Numeric {
         #[serde(rename = "Label")]
-        label : String
+        label : String,
+        #[serde(rename = "DecimalDigits")]
+        digits : u8
     },
     Binned {
         #[serde(rename = "Label")]
@@ -41,11 +43,20 @@ pub struct PulseVolumeConfig {
     balance : FormatableVolume<VolumeKeyBalance>
 }
 
+impl PulseVolumeConfig {
+    fn format_volume(&self, value : f32) -> Result<Option<String>,FormattingError> {
+        self.volume.format_float(value)
+    }
+    fn format_balance(&self, value : f32) -> Result<Option<String>,FormattingError> {
+        self.balance.format_float(value)
+    }
+}
+
 impl Default for PulseVolumeConfig {
     fn default() -> Self {
         PulseVolumeConfig {
             sink : Sink::Default,
-            //volume : FormatableVolume::Numeric { label : String::new() },
+            //volume : FormatableVolume::Numeric { label : String::new(), digits : 0 },
             volume : FormatableVolume::Binned { label : String::new(), bin_symbol_map : {let mut a = BTreeMap::new(); a.insert(VolumeKey(4),String::from("Blah")); a}},
             balance : FormatableVolume::Off
         }
@@ -59,6 +70,49 @@ impl SwayStatusModuleInstance for PulseVolumeConfig {
     }
 }
 
+#[derive(Debug)]
+pub(crate) enum FormattingError {
+    EmptyMap {
+        numeric_fallback : String
+    }
+}
+impl std::fmt::Display for FormattingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FormattingError::EmptyMap{numeric_fallback} => { write!(f, "Formatting failed. Empty PercentToSymbolMap. Numeric value: {}", numeric_fallback) }
+        }
+    }
+}
+impl std::error::Error for FormattingError {}
+
+impl<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> FormatableVolume<KeyTypeMetadata> {
+    fn format_float(&self, float : f32) -> Result<Option<String>, FormattingError> {
+        match self {
+            FormatableVolume::Numeric{ label, digits } => { Ok(Some(Self::format_float_numeric(float, label, *digits))) }
+            FormatableVolume::Binned{ label, bin_symbol_map } => { Some(Self::format_float_binned(float, label, bin_symbol_map)).transpose()}
+            FormatableVolume::Off => {Ok(None)}
+        }
+    }
+    fn format_float_binned(float : f32, label : &str, bin_symbol_map : &BTreeMap<VolumeKey<KeyTypeMetadata>, String>) -> Result<String,FormattingError> {
+        let value_to_match = VolumeKey::<KeyTypeMetadata>::match_float(float);
+        //first try to find the next lower value.
+        if let Some((_,msg)) = bin_symbol_map.range(..=value_to_match).next_back() {
+            Ok(format!("{}{}",label,msg))
+        }
+        else {
+            if let Some((_,msg)) = bin_symbol_map.iter().next() {
+                Ok(format!("{}{}",label,msg))
+            }
+            else {
+                Err(FormattingError::EmptyMap{numeric_fallback : Self::format_float_numeric(float, label, 0) })
+            }
+        }
+    }
+    fn format_float_numeric(float : f32, label : &str, digits : u8) -> String {
+        let percentage = 100.0*float;
+        format!("{}{:.*}%", label, digits as usize, percentage)
+    }
+}
 
 ///Helper trait for conversion from float to integer backing type for volume binning keys.
 ///Needed because Rust seems not to offer a trait that indicates "can be rounded from float"
@@ -128,6 +182,7 @@ impl<BackingType : VolumeKeyBackingTypeMetadata> VolumeKey<BackingType> {
         let result = BackingType::BackingType::round_from_float(offset) + BackingType::MIN;
         Self(result)
     }
+
 }
 /// Custom serializer, as TOML only supports string map keys.
 impl<Metadata : VolumeKeyBackingTypeMetadata> Serialize for VolumeKey<Metadata> {
