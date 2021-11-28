@@ -17,22 +17,32 @@ AfterText = ""
 
 [[Element]]
 Plugin = "PulseVolume"
+
+[Element.Config]
+Sorting = "MuteVolumeBalance"
+
 [Element.Config.Sink]
 Sink = "Default"
 
 [Element.Config.Volume]
 Format = "Numeric"
 Label = ""
-DecimalDigits = 2
+DecimalDigits = 1
 
 [Element.Config.Balance]
 Format = "Binned"
-Label = "Balance"
+Label = " "
 
 [Element.Config.Balance.PercentToSymbolMap]
 -100 = "Ooo"
 -10 = "oOo"
 10 = "ooO"
+
+[Element.Config.Mute]
+Format = "Symbol"
+label = ""
+mute_symbol = "🔇"
+unmute_symbol = "🔊"
 
 [Element.General]
 BeforeText = ""

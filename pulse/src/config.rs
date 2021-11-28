@@ -13,6 +13,7 @@ use std::num::{ParseIntError,IntErrorKind};
 pub(crate) enum Sink {
     Default,
     Specific {
+        #[serde(rename = "SinkName")]
         sink_name : String
     }
 }
@@ -36,19 +37,68 @@ enum FormatableVolume<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> {
 }
 
 #[derive(Serialize, Deserialize)]
+enum FieldSorting {
+    MuteVolumeBalance,
+    MuteBalanceVolume,
+    VolumeMuteBalance,
+    VolumeBalanceMute,
+    BalanceMuteVolume,
+    BalanceVolumeMute,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "Format")]
+enum FormatableMute {
+    Off,
+    Symbol {
+        label : String,
+        mute_symbol : String,
+        unmute_symbol : String
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase", default)]
 pub struct PulseVolumeConfig {
+    sorting : FieldSorting,
     pub(crate) sink : Sink,
     volume : FormatableVolume<VolumeKeyVolume>,
-    balance : FormatableVolume<VolumeKeyBalance>
+    balance : FormatableVolume<VolumeKeyBalance>,
+    mute : FormatableMute,
 }
 
 impl PulseVolumeConfig {
-    fn format_volume(&self, value : f32) -> Result<Option<String>,FormattingError> {
-        self.volume.format_float(value)
-    }
-    fn format_balance(&self, value : f32) -> Result<Option<String>,FormattingError> {
-        self.balance.format_float(value)
+    pub(crate) fn format_volume(&self, volume : f32, balance : f32, mute : bool) -> Result<String,FormattingError> {
+        let formatted_volume = self.volume.format_float(volume);
+        let formatted_balance = self.balance.format_float(balance);
+        let have_errors_occured = formatted_volume.is_err() || formatted_balance.is_err();
+        let formatted_mute_option = self.mute.format_mute(mute);
+        let formatted_mute = formatted_mute_option.as_deref().unwrap_or("");
+        let get_numeric_fallback = |x| -> Option<String> { 
+            match x {
+                FormattingError::EmptyMap{ numeric_fallback } => { Some(numeric_fallback) } 
+            }
+        };
+        let formatted_volume = formatted_volume.unwrap_or_else(get_numeric_fallback);
+        let formatted_volume = formatted_volume.as_deref().unwrap_or("");
+        let formatted_balance = formatted_balance.unwrap_or_else(get_numeric_fallback);
+        let formatted_balance = formatted_balance.as_deref().unwrap_or("");
+
+        let sorted_values = match self.sorting {
+            FieldSorting::BalanceMuteVolume => {[formatted_balance, formatted_mute, formatted_volume]}
+            FieldSorting::BalanceVolumeMute => {[formatted_balance, formatted_volume, formatted_mute]}
+            FieldSorting::MuteBalanceVolume => {[formatted_mute, formatted_balance, formatted_volume]}
+            FieldSorting::MuteVolumeBalance => {[formatted_mute, formatted_volume, formatted_balance]}
+            FieldSorting::VolumeBalanceMute => {[formatted_volume, formatted_balance, formatted_mute]}
+            FieldSorting::VolumeMuteBalance => {[formatted_volume, formatted_mute, formatted_balance]}
+        };
+        let formatted_string = format!("{}{}{}",sorted_values[0], sorted_values[1], sorted_values[2]);
+        if have_errors_occured {
+            Err(FormattingError::EmptyMap{ numeric_fallback : formatted_string })
+        }
+        else {
+            Ok(formatted_string)
+        }
     }
 }
 
@@ -56,9 +106,19 @@ impl Default for PulseVolumeConfig {
     fn default() -> Self {
         PulseVolumeConfig {
             sink : Sink::Default,
-            //volume : FormatableVolume::Numeric { label : String::new(), digits : 0 },
-            volume : FormatableVolume::Binned { label : String::new(), bin_symbol_map : {let mut a = BTreeMap::new(); a.insert(VolumeKey(4),String::from("Blah")); a}},
-            balance : FormatableVolume::Off
+            volume : FormatableVolume::Numeric { label : String::from(" "), digits : 0 },
+            balance : FormatableVolume::Binned { 
+                label : String::from(" "), 
+                bin_symbol_map : {
+                    let mut a = BTreeMap::new(); 
+                    a.insert(VolumeKey(-100),String::from("|.."));
+                    a.insert(VolumeKey(-10), String::from(".|."));
+                    a.insert(VolumeKey(10), String::from("..|"));
+                    a
+                }
+            },
+            mute : FormatableMute::Symbol { label : String::new(), mute_symbol : String::from("🔇"), unmute_symbol : String::from(" ") },
+            sorting : FieldSorting::MuteVolumeBalance,
         }
     }
 }
@@ -114,6 +174,14 @@ impl<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> FormatableVolume<KeyTypeMet
     }
 }
 
+impl FormatableMute {
+    fn format_mute(&self, mute : bool) -> Option<String> {
+        match self {
+            FormatableMute::Off => { None }
+            FormatableMute::Symbol{ label, mute_symbol, unmute_symbol}  => { Some(format!("{}{}", label, { if mute { mute_symbol } else { unmute_symbol }}))}
+        }
+    }
+}
 ///Helper trait for conversion from float to integer backing type for volume binning keys.
 ///Needed because Rust seems not to offer a trait that indicates "can be rounded from float"
 ///in the standard library. There are thir-party crates that do this, but using a full crate
@@ -177,8 +245,8 @@ impl<BackingType : VolumeKeyBackingTypeMetadata> VolumeKey<BackingType> {
     fn match_float(float : f32) -> Self {
         let x = (float - BackingType::FLOAT_MIN) / (BackingType::FLOAT_MAX - BackingType::FLOAT_MIN);
         let cx = x.clamp(0.0,1.0);
-        let interval = BackingType::MAX - BackingType::MIN;
-        let offset = interval.into() * cx;
+        let interval = BackingType::MAX.into() - BackingType::MIN.into();
+        let offset = interval * cx;
         let result = BackingType::BackingType::round_from_float(offset) + BackingType::MIN;
         Self(result)
     }

@@ -31,12 +31,20 @@ impl<'p : 's, 's> PulseVolumeRunnable<'p> {
         self.to_main.send_update(Err(PluginError::PrintToStdErr(err.to_string()))).expect("Tried to tell main thread that an error occured. Main thread isn't listening any more.");
     }
 
-    fn send_updated_volume_to_main(&self, volume : &pulse::Volume) -> Result<(),PluginCommunicationError> {
-        self.to_main.send_update(Ok(self.format_volume(volume)))
-    }
-
-    fn format_volume(&self, volume : &pulse::Volume) -> String {
-        format!("{}",volume.volume)
+    fn format_and_send_updated_volume_to_main(&self, volume : &pulse::Volume) -> Result<(),PluginCommunicationError> {
+        let formatted_volume = self.config.format_volume(volume.volume, volume.balance, volume.muted);
+        match formatted_volume {
+            Ok(msg) => { self.to_main.send_update(Ok(msg)) }
+            Err(e) => {
+                let full_message = e.to_string();
+                match e {
+                    FormattingError::EmptyMap{ numeric_fallback } => {
+                        self.to_main.send_update(Err(PluginError::ShowInsteadOfText(numeric_fallback)))?;
+                        self.to_main.send_update(Err(PluginError::PrintToStdErr(full_message)))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -140,7 +148,7 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                 }
                 if volume.is_some() && volume != curr_volume {
                     curr_volume = volume;
-                    self.send_updated_volume_to_main(curr_volume.as_ref().unwrap()).expect("Tried to inform main thread about volume update. Main thread isn't listening.");
+                    self.format_and_send_updated_volume_to_main(curr_volume.as_ref().unwrap()).expect("Tried to inform main thread about volume update. Main thread isn't listening.");
                 }
                 match self.from_main.try_recv() {
                     Ok(x) => match x {
