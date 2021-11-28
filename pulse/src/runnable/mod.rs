@@ -121,7 +121,7 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                         continue 'outer;
                     }
                     PaContextState::Ready => {
-                        if sink_we_care_about.is_none() {
+                        if curr_default_sink.is_none() {
                             //this may trigger several redundant refreshes, but it _should_ only happen
                             //during startup, so we don't really care.
                             context.refresh_default_sink();
@@ -141,9 +141,9 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                     curr_default_sink = default_sink;
                     if let crate::config::Sink::Default = self.config.sink {
                         sink_we_care_about = curr_default_sink.clone();
-                        if let Some(s) = &sink_we_care_about {
-                            context.refresh_volume(s);
-                        }
+                    }
+                    if let Some(s) = &sink_we_care_about {
+                        context.refresh_volume(s);
                     }
                 }
                 if volume.is_some() && volume != curr_volume {
