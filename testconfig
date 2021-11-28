@@ -40,9 +40,9 @@ Label = " "
 
 [Element.Config.Mute]
 Format = "Symbol"
-label = ""
-mute_symbol = "🔇"
-unmute_symbol = "🔊"
+Label = ""
+MuteSymbol = "🔇"
+UnmuteSymbol = "🔊"
 
 [Element.General]
 BeforeText = ""

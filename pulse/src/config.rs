@@ -51,8 +51,11 @@ enum FieldSorting {
 enum FormatableMute {
     Off,
     Symbol {
+        #[serde(rename = "Label")]
         label : String,
+        #[serde(rename = "MuteSymbol")]
         mute_symbol : String,
+        #[serde(rename = "UnmuteSymbol")]
         unmute_symbol : String
     }
 }
@@ -106,7 +109,7 @@ impl Default for PulseVolumeConfig {
     fn default() -> Self {
         PulseVolumeConfig {
             sink : Sink::Default,
-            volume : FormatableVolume::Numeric { label : String::from(" "), digits : 0 },
+            volume : FormatableVolume::Numeric { label : String::from(""), digits : 0 },
             balance : FormatableVolume::Binned { 
                 label : String::from(" "), 
                 bin_symbol_map : {
@@ -117,7 +120,7 @@ impl Default for PulseVolumeConfig {
                     a
                 }
             },
-            mute : FormatableMute::Symbol { label : String::new(), mute_symbol : String::from("🔇"), unmute_symbol : String::from(" ") },
+            mute : FormatableMute::Symbol { label : String::new(), mute_symbol : String::from("🔇"), unmute_symbol : String::from("🔊") },
             sorting : FieldSorting::MuteVolumeBalance,
         }
     }
