@@ -22,10 +22,16 @@ Sink = "Default"
 
 [Element.Config.Volume]
 Format = "Numeric"
-label = ""
+Label = ""
 
 [Element.Config.Balance]
-Format = "Off"
+Format = "Binned"
+Label = "Balance"
+
+[Element.Config.Balance.PercentToSymbolMap]
+-100 = "Ooo"
+-10 = "oOo"
+10 = "ooO"
 
 [Element.General]
 BeforeText = ""

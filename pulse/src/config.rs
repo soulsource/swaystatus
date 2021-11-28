@@ -1,4 +1,6 @@
 use serde::{Serialize,Deserialize,Serializer,Deserializer};
+use serde::de::Error as DeError;
+use serde::de::Unexpected as DeUnexpect;
 use std::collections::BTreeMap;
 use swaystatus_plugin::*;
 use std::ops::{Add, Sub};
@@ -20,10 +22,13 @@ pub(crate) enum Sink {
 enum FormatableVolume<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> {
     Off,
     Numeric {
+        #[serde(rename = "Label")]
         label : String
     },
     Binned {
+        #[serde(rename = "Label")]
         label: String,
+        #[serde(rename = "PercentToSymbolMap")]
         bin_symbol_map : BTreeMap<VolumeKey<KeyTypeMetadata>,String>
     }
 }
@@ -40,8 +45,8 @@ impl Default for PulseVolumeConfig {
     fn default() -> Self {
         PulseVolumeConfig {
             sink : Sink::Default,
-            volume : FormatableVolume::Numeric { label : String::new() },
-            //volume : FormatableVolume::Binned { label : String::new(), bin_symbol_map : {let mut a = BTreeMap::new(); a.insert(4,String::from("Blah")); a}},
+            //volume : FormatableVolume::Numeric { label : String::new() },
+            volume : FormatableVolume::Binned { label : String::new(), bin_symbol_map : {let mut a = BTreeMap::new(); a.insert(VolumeKey(4),String::from("Blah")); a}},
             balance : FormatableVolume::Off
         }
     }
@@ -79,7 +84,10 @@ trait VolumeKeyBackingTypeMetadata : Ord {
         + Add<Output = Self::BackingType>
         + Sub<Output = Self::BackingType>
         + Into<f32>
-        + VolumeKeyBackingTypeFromFloat;
+        + VolumeKeyBackingTypeFromFloat
+        + ToString //TOML needs map keys to be strings...
+        + FromStr<Err = ParseIntError>
+        + std::fmt::Display;
     const MIN : Self::BackingType;
     const MAX : Self::BackingType;
     const FLOAT_MIN : f32;
@@ -121,18 +129,40 @@ impl<BackingType : VolumeKeyBackingTypeMetadata> VolumeKey<BackingType> {
         Self(result)
     }
 }
-
+/// Custom serializer, as TOML only supports string map keys.
 impl<Metadata : VolumeKeyBackingTypeMetadata> Serialize for VolumeKey<Metadata> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S : Serializer 
     {
-        Err(serde::ser::Error::custom("Unimplemented"))
+        let string = self.0.to_string();
+        serializer.serialize_str(&string)
     }
 }
-impl<'de, Metadata : VolumeKeyBackingTypeMetadata> Deserialize<'de> for VolumeKey<Metadata> {
+impl<'de, Metadata> Deserialize<'de> for VolumeKey<Metadata>
+    where Metadata : VolumeKeyBackingTypeMetadata,
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
     {
-        Err(serde::de::Error::custom("Unimplemented"))
+        let a = String::deserialize(deserializer)?;
+        match a.parse() {
+            Ok(x) => { 
+                if x >= Metadata::MIN && x <= Metadata::MAX {
+                    Ok(Self(x)) 
+                }
+                else {
+                    Err(DeError::invalid_value(DeUnexpect::Str(&a), &&*format!("an integer equal or larger {} and equal or smaller {}", Metadata::MIN, Metadata::MAX)))
+                }
+            }
+            Err(e) => {
+                match e.kind() {
+                    IntErrorKind::Empty => { Err(DeError::missing_field("Bin Map Key")) }
+                    IntErrorKind::InvalidDigit => { Err(DeError::invalid_type(DeUnexpect::Str(&a), &"an integer value")) }
+                    IntErrorKind::NegOverflow | IntErrorKind::PosOverflow => { Err(DeError::invalid_value(DeUnexpect::Str(&a), &&*format!("an integer equal or larger {} and equal or smaller {}", Metadata::MIN, Metadata::MAX))) }
+                    IntErrorKind::Zero => { Err(DeError::invalid_value(DeUnexpect::Str(&a), &&*format!("a nonzero integer between {} and {}", Metadata::MIN, Metadata::MAX)))}
+                    _ => { Err(DeError::custom("Value could not be parsed")) }
+                }
+            }
+        }
     }
 }
