@@ -46,6 +46,7 @@ pub fn parse_commandline() -> CommandlineParameters {
             .long("config")
             .value_name(&*gettext("FILE"))
             .about(&*gettext("Path to the configuration file"))
+            .display_order(0)
             .takes_value(true))
         .arg(
             Arg::new("plugins")
@@ -53,12 +54,14 @@ pub fn parse_commandline() -> CommandlineParameters {
             .long("plugins")
             .value_name(&*gettext("FOLDER"))
             .about(&*gettext("Directory from which the plugins should be loaded"))
+            .display_order(0)
             .takes_value(true))
         .arg(
             Arg::new("sampleconfig")
             .long("print-sample-config")
             .short('s')
             .about(&*gettext("Prints a sample config file. Beware that the contents of the sample file depend on the loaded plugins, so don't forget to supply the plugins parameter as needed."))
+            .display_order(2)
             .takes_value(false)
             .conflicts_with_all(&["pluginhelp","pluginlist"]))
         .arg(
@@ -75,6 +78,7 @@ pub fn parse_commandline() -> CommandlineParameters {
             .long("list-plugins")
             .short('l')
             .about(&*gettext("Prints a list of plugin names in the plugin folder."))
+            .display_order(1)
             .takes_value(false))
         .after_help(&*gettext!("If no config path is given, the code looks for the \"swaystatus/config\" file in your XDG config folder (typically \"$HOME/.config/\"). If that lookup fails, loading of \"/etc/swaystatus/config\" is attempted. Similarly, if no plugin folder is given, first the existence of a folder named \"$HOME/.local/lib/swaystatus\" is checked. If this folder does not exist, a default path set at compile time is used, which in your case is \"{}\"." , get_hardcoded_default_library_path()))
         .help_template(&*gettext("\
@@ -83,8 +87,6 @@ pub fn parse_commandline() -> CommandlineParameters {
 {about}\n\
 USAGE\n    {usage}\n\
 \n\
-FLAGS:
-{flags}\n
 OPTIONS:
 {options}\n
 {after-help}")).get_matches();

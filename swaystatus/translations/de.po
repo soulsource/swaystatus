@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: swaystatus 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-27 11:15+0000\n"
+"POT-Creation-Date: 2021-11-29 22:22+0000\n"
 "PO-Revision-Date: 2021-04-15 09:43+0200\n"
 "Last-Translator: Andreas Grois <andi@grois.info>\n"
 "Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
@@ -17,13 +17,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/plugin_database/mod.rs:26
+#: src/plugin_database/mod.rs:26
 msgid "Failed to load library {}, no version information found."
 msgstr ""
 "Bibliothek {} konnte nicht geladen werden, sie enthält nicht die benötigten "
 "Versionsinformationen"
 
-#: ../src/plugin_database/mod.rs:29
+#: src/plugin_database/mod.rs:29
 msgid ""
 "Failed to load library {}, it was built with the wrong plugin version. "
 "Expected version {}, found version {}"
@@ -31,7 +31,7 @@ msgstr ""
 "Bibliothek {} konnte nicht geladen werden, sie wurde mit einer anderen "
 "Plugin-Schnittstellen-Version erstellt. Erwartete Version {}, fand Version {}"
 
-#: ../src/plugin_database/mod.rs:32
+#: src/plugin_database/mod.rs:32
 msgid ""
 "Failed to load library {}, it was built with a different Rust version. Since "
 "there is no ABI stability guaranteed, this safeguard is required. Please "
@@ -44,7 +44,7 @@ msgstr ""
 "bitte sicher, dass sowohl das Hauptprogramm, als auch alle Bibliotheken mit "
 "dem gleichen Compiler übersetzt werden. Erwartete Version {}, fand Version {}"
 
-#: ../src/plugin_database/mod.rs:36
+#: src/plugin_database/mod.rs:36
 msgid ""
 "Failed to load library {}, it does not export the "
 "_swaystatus_module_create() function."
@@ -52,17 +52,17 @@ msgstr ""
 "Bibliothek {} konnte nicht geladen werden, sie enthält nicht die benötigte "
 "_swaystatus_module_create() Funktion."
 
-#: ../src/plugin_database/mod.rs:57
+#: src/plugin_database/mod.rs:57
 msgid "File I/O error while iterating libraries: {}"
 msgstr "Ein-/Ausgabefehler beim Auflisten der Bibliotheken: {}"
 
-#: ../src/plugin_database/mod.rs:65
+#: src/plugin_database/mod.rs:65
 msgid "Failed to load as library: {}"
 msgstr ""
 "Eintrag im Plugins-Ordner kann nicht als dynamische Bibliothek geladen "
 "werden: {}"
 
-#: ../src/communication/mod.rs:42
+#: src/communication/mod.rs:42
 msgid ""
 "I, element {}, tried to inform the main thread that I crashed. However the "
 "main thread isn't listening any more. This should be impossible, but well... "
@@ -73,7 +73,7 @@ msgstr ""
 "eigentlich unmöglich sein, aber gut, es ist passiert... Naja, wird schon "
 "nicht so schlimm sein, dass es sinnvoll wäre das ganze Programm anzuhalten."
 
-#: ../src/signalhandler/mod.rs:19
+#: src/signalhandler/mod.rs:19
 msgid ""
 "Failed to register signal handler. Since without signal handler there's no "
 "proper way to cleanly exit any plugins, we bail now."
@@ -81,7 +81,7 @@ msgstr ""
 "Fehler beim Registrieren des Signal-Handlers. Da es ohne einen solchen nicht "
 "möglich ist, die Plugins sauber zu beenden, brechen wir lieber hier ab."
 
-#: ../src/signalhandler/mod.rs:34
+#: src/signalhandler/mod.rs:34
 msgid ""
 "Message handler failed to send a message to main thread. This is supposed to "
 "be impossible. In any case it's a critical error."
@@ -90,35 +90,35 @@ msgstr ""
 "Thread auf. Das sollte eigentlich unmöglich sein... Leider ist das ein "
 "kritischer Fehler."
 
-#: ../src/commandline/mod.rs:30
+#: src/commandline/mod.rs:30
 msgid "A simple status text app, inspired by i3status"
 msgstr "Eine einfache Status-Text Anwendung, inspiriert durch i3status"
 
-#: ../src/commandline/mod.rs:35
+#: src/commandline/mod.rs:35
 msgid "Prints help information."
 msgstr "Gibt Hilfe-Informationen aus."
 
-#: ../src/commandline/mod.rs:41
+#: src/commandline/mod.rs:41
 msgid "Prints version information."
 msgstr "Gibt Versions-Informationen aus."
 
-#: ../src/commandline/mod.rs:47
+#: src/commandline/mod.rs:47
 msgid "FILE"
 msgstr "DATEI"
 
-#: ../src/commandline/mod.rs:48
+#: src/commandline/mod.rs:48
 msgid "Path to the configuration file"
 msgstr "Pfad zur Konfigurationsdatei"
 
-#: ../src/commandline/mod.rs:54
+#: src/commandline/mod.rs:55
 msgid "FOLDER"
 msgstr "ORDNER"
 
-#: ../src/commandline/mod.rs:55
+#: src/commandline/mod.rs:56
 msgid "Directory from which the plugins should be loaded"
 msgstr "Ordner aus dem die Plugins geladen werden sollen."
 
-#: ../src/commandline/mod.rs:61
+#: src/commandline/mod.rs:63
 msgid ""
 "Prints a sample config file. Beware that the contents of the sample file "
 "depend on the loaded plugins, so don't forget to supply the plugins "
@@ -129,24 +129,24 @@ msgstr ""
 "vergessen Sie daher nicht, gegebenenfalls auch den Plugin-Ordner als "
 "Parameter anzugeben."
 
-#: ../src/commandline/mod.rs:68
+#: src/commandline/mod.rs:71
 msgid "PLUGINS"
 msgstr "PLUGINS"
 
-#: ../src/commandline/mod.rs:69
+#: src/commandline/mod.rs:72
 msgid ""
 "Prints plugin help messages. Either for a given list of plugins, or if no "
 "list given, for all loadable plugins."
 msgstr ""
-"Zeigt die Hilfe von Plugins an. Wenn eine Liste von Plugins angegebenwird, "
-"für Plugins in der Liste. Wenn keine Liste angegeben wird für allePlugins, "
+"Zeigt die Hilfe von Plugins an. Wenn eine Liste von Plugins angegeben wird, "
+"dann nur für Plugins in der Liste. Wenn keine Liste angegeben wird für alle Plugins, "
 "die geladen werden können."
 
-#: ../src/commandline/mod.rs:77
+#: src/commandline/mod.rs:80
 msgid "Prints a list of plugin names in the plugin folder."
 msgstr "Zeigt eine Liste aller Pluginnamen im Plugin-Ordner an."
 
-#: ../src/commandline/mod.rs:79
+#: src/commandline/mod.rs:83
 msgid ""
 "If no config path is given, the code looks for the \"swaystatus/config\" "
 "file in your XDG config folder (typically \"$HOME/.config/\"). If that "
@@ -165,7 +165,7 @@ msgstr ""
 "der während des Übersetzens des Programmes festgelegt wurde. Momentan ist "
 "dieser \"{}\"."
 
-#: ../src/commandline/mod.rs:80
+#: src/commandline/mod.rs:84
 msgid ""
 "{before-help}{bin} {version}\n"
 "{author}\n"
@@ -173,9 +173,6 @@ msgid ""
 "{about}\n"
 "USAGE\n"
 "    {usage}\n"
-"\n"
-"FLAGS:\n"
-"{flags}\n"
 "\n"
 "OPTIONS:\n"
 "{options}\n"
@@ -189,15 +186,12 @@ msgstr ""
 "VERWENDUNG:\n"
 "    {usage}\n"
 "\n"
-"SCHALTER:\n"
-"{flags}\n"
-"\n"
 "OPTIONEN:\n"
 "{options}\n"
 "\n"
 "{after-help}"
 
-#: ../src/main.rs:66
+#: src/main.rs:66
 msgid "No elements set up in configuration. Nothing to display."
 msgstr ""
 "In der Konfiguration sind keine Elemente zum Anzeigen definiert. Es gibt "
@@ -207,7 +201,7 @@ msgstr ""
 #. is. The documentation only mentions that unwinding across C functions doesn't work, but
 #. that seems to also be true for dynamically loaded Rust libs... That's why we can only
 #. print a general error here.
-#: ../src/main.rs:123
+#: src/main.rs:123
 msgid ""
 "At least one of the plugins panicked. For details please check the "
 "(hopefully existing) previous error messages."
@@ -215,17 +209,17 @@ msgstr ""
 "Mindestens ein Plugin ist abgestürzt. Mehr Details sollten in einer früheren "
 "Fehlermeldung (vom Zeitpunkt des Absturzes) ersichtlich sein."
 
-#: ../src/main.rs:135
+#: src/main.rs:135
 msgid "The configuration file could not be read. Nothing to do."
 msgstr ""
 "Die Konfigurationsdatei konnte nicht gelesen werden. Es gibt daher nichts zu "
 "tun."
 
-#: ../src/main.rs:138
+#: src/main.rs:138
 msgid "The parser for the config file returned an error: {}"
 msgstr "Der Parser für die Konfigurationsdatei hat einen Fehler ausgegeben: {}"
 
-#: ../src/main.rs:148
+#: src/main.rs:148
 msgid ""
 "Tried to tell a plugin to quit, but that plugin seems to no longer listen to "
 "messages. Either that plugin has already terminated, or it's stuck. In the "
@@ -239,7 +233,7 @@ msgstr ""
 "Es kann daher notwendig sein, diesen Prozess per SIGKILL zu beenden. Das "
 "Element, das nicht mehr reagiert ist Nummer {}, aus dem Plugin {}."
 
-#: ../src/main.rs:155
+#: src/main.rs:155
 msgid ""
 "Tried to tell a plugin to refresh, but it doesn't listen any more. Either "
 "the plugin already terminated, or it is stuck. The offending element is "
@@ -253,15 +247,15 @@ msgstr ""
 "diesen Prozess per SIGKILL zu beenden. Das Element, das nicht mehr reagiert "
 "ist Nummer {}, aus dem Plugin {}."
 
-#: ../src/main.rs:166 ../src/main.rs:168
+#: src/main.rs:166 src/main.rs:168
 msgid "Element number {} (plugin: {}) sent an error message: {}"
 msgstr "Element Nummer {} (Plugin: {}) hat eine Fehlermeldung geschickt: {}"
 
-#: ../src/main.rs:192
+#: src/main.rs:192
 msgid "<plugin crashed>"
 msgstr "<Plugin abgestürzt>"
 
-#: ../src/main.rs:193
+#: src/main.rs:193
 msgid ""
 "The plugin {} crashed while displaying element number {}. Please see the "
 "plugin's panic message above for details."
@@ -270,7 +264,7 @@ msgstr ""
 "Fehlermeldung des Plugins selbst ersichtlich (sollte gleich über dieser "
 "Meldung sein)."
 
-#: ../src/main.rs:197
+#: src/main.rs:197
 msgid ""
 "Tried to load plugins from folder \"{}\", but failed. You might want to set "
 "a plugin directory on the command line. The actual error was:"
@@ -279,11 +273,11 @@ msgstr ""
 "möglicherweise notwendig, einen Ordner als Kommandozeilenparameter "
 "anzugeben. Die genaue Fehlermeldung ist:"
 
-#: ../src/main.rs:239 ../src/main.rs:246
+#: src/main.rs:239 src/main.rs:246
 msgid "Plugin: \"{}\""
 msgstr "Plugin: \"{}\""
 
-#: ../src/main.rs:251
+#: src/main.rs:251
 msgid "Plugin {} not found."
 msgstr "Das Plugin {} wurde nicht gefunden."
 
