@@ -4,7 +4,7 @@
 use std::sync::{Arc, Weak};
 use std::ffi::{CString, CStr, c_void};
 use std::os::raw::{c_int, c_char};
-use std::convert::TryFrom;
+use std::convert::{TryFrom,TryInto};
 
 use std::marker::PhantomData;
 
@@ -88,12 +88,12 @@ impl<'c> PulseContext<'c> {
         }
     }
 
-    pub(super) fn refresh_default_sink(&mut self) {
-        unsafe {pa_operation_unref(pa_context_get_server_info(self.context,Some(Self::on_server_info_received),self.scratch as *mut ContextScratch as *mut c_void)); }
+    pub(super) fn refresh_default_sink(&mut self) -> Result<PulseOperation, InvalidOperationError> {
+        unsafe {pa_context_get_server_info(self.context,Some(Self::on_server_info_received),self.scratch as *mut ContextScratch as *mut c_void).try_into() }
     }
 
-    pub(super) fn refresh_volume(&mut self, sink : &SinkHandle) {
-        unsafe {pa_operation_unref(pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch as *mut ContextScratch as *mut c_void));}
+    pub(super) fn refresh_volume(&mut self, sink : &SinkHandle) -> Result<PulseOperation, InvalidOperationError> {
+        unsafe {pa_context_get_sink_info_by_name(self.context,sink.sink.as_ptr(),Some(Self::on_sink_info_received),self.scratch as *mut ContextScratch as *mut c_void).try_into()}
     }
 
     extern "C" fn on_context_state_change(context : *mut PaContext, scratch : *mut c_void) {
@@ -371,6 +371,41 @@ impl Default for ContextScratch {
     }
 }
 
+pub(super) struct PulseOperation {
+    ptr : *mut PaOperation
+}
+
+pub(super) struct InvalidOperationError;
+impl std::convert::TryFrom<*mut PaOperation> for PulseOperation {
+    type Error = InvalidOperationError;
+    fn try_from(ptr : *mut PaOperation) -> Result<Self,Self::Error> {
+        if ptr.is_null() {
+            Err(InvalidOperationError)
+        }
+        else {
+            Ok(Self{ptr})
+        }
+    }
+}
+
+impl Drop for PulseOperation {
+    fn drop(&mut self) {
+        unsafe { pa_operation_unref(self.ptr) }
+    }
+}
+
+impl PulseOperation {
+    pub(super) fn get_operation_state(&self) -> PaOperationState {
+        unsafe { pa_operation_get_state(self.ptr) }
+    }
+    pub(super) fn is_operation_running(&self) -> bool {
+        match self.get_operation_state() {
+            PaOperationState::Running => { true }
+            _ => { false}
+        }
+    }
+}
+
 #[allow(dead_code)] //this is not dead code, but it seems the compiler doesn't understand the usage in FFI...
 #[repr(C)] pub(super) enum PaContextState {
     Unconnected,
@@ -380,6 +415,13 @@ impl Default for ContextScratch {
     Ready,
     Failed,
     Terminated
+}
+
+#[allow(dead_code)]
+#[repr(C)] pub(super) enum PaOperationState {
+    Running,
+    Done,
+    Cancelled
 }
 
 #[allow(dead_code)] //this is partially dead code, but the unused enum values are kept for readability reasons.
@@ -490,6 +532,7 @@ extern "C" {
     #[must_use]
     fn pa_context_subscribe(_: *mut PaContext, subscription_mask : c_int, callback : Option<PaContextSuccessCb>, scratch : *mut c_void) -> *mut PaOperation;
     fn pa_operation_unref(operation : *mut PaOperation);
+    fn pa_operation_get_state(operation : *const PaOperation) -> PaOperationState;
 
     #[must_use]
     fn pa_context_get_sink_info_by_index(_: *mut PaContext, sink_index : u32, callback : Option<PaSinkInfoCb>, scratch : *mut c_void) -> *mut PaOperation;

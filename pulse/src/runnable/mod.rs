@@ -5,7 +5,7 @@ use crate::communication::*;
 use std::convert::TryFrom;
 
 pub mod pulse;
-use pulse::{Pulse,MainLoopCreationError, PulseContext, PaContextState, SinkHandle};
+use pulse::{Pulse,MainLoopCreationError, PulseContext, PaContextState, SinkHandle, PulseOperation};
 
 pub struct PulseVolumeRunnable<'p> {
     config : &'p PulseVolumeConfig,
@@ -80,9 +80,11 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                     }) 
                 }
             };
+            let mut curr_sink_refresh : Option<PulseOperation> = None;
             loop {
                 match context.get_state() {
                     PaContextState::Unconnected => { 
+                        curr_sink_refresh = None;
                         if let crate::config::Sink::Default = &self.config.sink {
                             sink_we_care_about = None; 
                         }
@@ -121,10 +123,13 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                         continue 'outer;
                     }
                     PaContextState::Ready => {
-                        if curr_default_sink.is_none() {
-                            //this may trigger several redundant refreshes, but it _should_ only happen
-                            //during startup, so we don't really care.
-                            context.refresh_default_sink();
+                        if curr_sink_refresh.is_none() || !curr_sink_refresh.as_ref().unwrap().is_operation_running() {
+                            curr_sink_refresh = if curr_default_sink.is_none() {
+                                context.refresh_default_sink().ok()
+                            }
+                            else {
+                                None
+                            }
                         }
                     }
                     _ => {}
@@ -143,7 +148,7 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                         sink_we_care_about = curr_default_sink.clone();
                     }
                     if let Some(s) = &sink_we_care_about {
-                        context.refresh_volume(s);
+                        drop(context.refresh_volume(s));
                     }
                 }
                 if volume.is_some() && volume != curr_volume {
@@ -157,10 +162,12 @@ impl<'p> SwayStatusModuleRunnable for PulseVolumeRunnable<'p> {
                         }
                         MessagesFromMain::Refresh => {
                             if let Some(s) = &sink_we_care_about {
-                                context.refresh_volume(s);
+                                drop(context.refresh_volume(s));
                             }
                             if let crate::config::Sink::Default = self.config.sink {
-                                context.refresh_default_sink();
+                                if curr_sink_refresh.is_none() || curr_sink_refresh.as_ref().unwrap().is_operation_running() {
+                                    curr_sink_refresh = context.refresh_default_sink().ok();
+                                }
                             }
                         }
                     }
