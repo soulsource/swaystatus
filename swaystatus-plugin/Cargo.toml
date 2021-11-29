@@ -10,4 +10,4 @@ edition = "2021"
 erased-serde = "0.3"
 
 [build-dependencies]
-rustc_version = "0.2.3"
+rustc_version = "0.4"

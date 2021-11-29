@@ -21,7 +21,7 @@ dirs = "3.0"
 swaystatus-plugin = { path = '../swaystatus-plugin', version = '*'}
 
 [build-dependencies]
-rustc_version = "0.2.3"
+rustc_version = "0.4"
 
 #[dev-dependencies]
 #mockall = "0.9.1"
