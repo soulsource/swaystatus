@@ -60,7 +60,7 @@ macro_rules! declare_swaystatus_module {
             // make sure the constructor is the correct type.
             let constructor: fn() -> $plugin_type = $constructor;
             let object = constructor();
-            let boxed: Box<$crate::SwayStatusModule> = Box::new(object);
+            let boxed: Box<dyn $crate::SwayStatusModule> = Box::new(object);
             Box::into_raw(boxed)
         }
         #[no_mangle]
