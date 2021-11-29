@@ -47,19 +47,17 @@ impl<'c> PulseContext<'c> {
         if api.is_null() {
             Err(PulseContextCreationError::FailedToGetPulseApi)
         }
-        else {
-            if let Ok(plugin_name) = CString::new("Swaystatus Pulse Plugin") {
-                let context = unsafe { pa_context_new(api, plugin_name.as_ptr()) };
-                if context.is_null() {
-                    Err(PulseContextCreationError::ContextNewFailed)
-                }
-                else {
-                    Ok(PulseContext { context, scratch, main : pulse})
-                }
+        else if let Ok(plugin_name) = CString::new("Swaystatus Pulse Plugin") {
+            let context = unsafe { pa_context_new(api, plugin_name.as_ptr()) };
+            if context.is_null() {
+                Err(PulseContextCreationError::ContextNewFailed)
             }
             else {
-                Err(PulseContextCreationError::SettingNameFailed)
+                Ok(PulseContext { context, scratch, main : pulse})
             }
+        }
+        else {
+            Err(PulseContextCreationError::SettingNameFailed)
         }
     }
     pub(super) fn iterate(&mut self, relevant_sink : &Option<SinkHandle>) -> Result<IterationResult,MainLoopIterationError> {
@@ -67,10 +65,10 @@ impl<'c> PulseContext<'c> {
         self.scratch.volume = None;
         self.scratch.default_sink = None;
         self.main.main_loop.iterate()?;
-        return Ok(IterationResult {
+        Ok(IterationResult {
             default_sink : self.scratch.default_sink.clone(),
             volume : self.scratch.volume.clone()
-        });
+        })
     }
     pub(super) fn get_state(&self) -> PaContextState {
         unsafe { pa_context_get_state(self.context) }
@@ -98,12 +96,9 @@ impl<'c> PulseContext<'c> {
 
     extern "C" fn on_context_state_change(context : *mut PaContext, scratch : *mut c_void) {
         unsafe {
-            match pa_context_get_state(context) {
-                PaContextState::Ready => {
-                    pa_context_set_subscribe_callback(context,Some(Self::on_context_event),scratch);
-                    pa_operation_unref(pa_context_subscribe(context,0x80 /* SERVER */ | 0x01 /* SINK */, None, std::ptr::null_mut()));
-                }
-                _ => {}
+            if let PaContextState::Ready = pa_context_get_state(context) {
+                pa_context_set_subscribe_callback(context,Some(Self::on_context_event),scratch);
+                pa_operation_unref(pa_context_subscribe(context,0x80 /* SERVER */ | 0x01 /* SINK */, None, std::ptr::null_mut()));
             }
         }
     }
@@ -121,7 +116,7 @@ impl<'c> PulseContext<'c> {
                     pa_operation_unref(pa_context_get_server_info(context,Some(Self::on_server_info_received),scratch as *mut c_void));
                 }
                 _ /* should not happen */ => {
-                    assert!(false);
+                    unreachable!();
                 }
             }
         }
@@ -424,7 +419,7 @@ impl PulseOperation {
     Cancelled
 }
 
-#[allow(dead_code)] //this is partially dead code, but the unused enum values are kept for readability reasons.
+#[allow(dead_code, clippy::enum_variant_names)] //this is partially dead code, but the unused enum values are kept for readability reasons. Also, clippy is over-zealous here.
 #[repr(C)] enum PaContextFlags {
     NoFlags = 0,
     NoAutoSpawn = 1,

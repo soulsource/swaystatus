@@ -21,7 +21,7 @@ impl<'p> SenderForMain {
     }
 
     fn send(&self, message : MessagesFromMain) -> Result<(), PluginCommunicationError> {
-        if let Ok(_) = self.sender.send(message) {
+        if self.sender.send(message).is_ok() {
             //The cool thing about pulse using poll() is that poll() also wakes up if started after
             //the actual wake up call. So no need to worry about races, this is inherently sane!
             self.pulse_waker.as_ref().ok_or(PluginCommunicationError {})?.wake_up()?;

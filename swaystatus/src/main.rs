@@ -104,11 +104,11 @@ fn core_loop(plugin_path : &std::path::Path, config_path : &std::path::Path) -> 
                     forward_to_all_plugins(&senders_to_plugins,&elements, i);
                 },
                 communication::Message::External{text, element_number} => {
-                    handle_message_from_element(&mut texts, &elements[element_number].get_name(), element_number, text);
+                    handle_message_from_element(&mut texts, elements[element_number].get_name(), element_number, text);
                     print_texts(&texts, &main_config, &elements);
                 },
                 communication::Message::ThreadCrash{element_number} => {
-                    handle_crash_from_element(&mut texts, &elements[element_number].get_name(), element_number);
+                    handle_crash_from_element(&mut texts, elements[element_number].get_name(), element_number);
                     print_texts(&texts, &main_config, &elements);
                 }
             }

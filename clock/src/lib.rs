@@ -138,7 +138,7 @@ impl SwayStatusModuleInstance for ClockConfig {
      fn make_runnable<'p>(&'p self, to_main : Box<dyn MsgModuleToMain + 'p>) -> (Box<dyn SwayStatusModuleRunnable + 'p>, Box<dyn MsgMainToModule + 'p>) {
          let (sender_from_main, from_main) = channel();
          let runnable = ClockRunnable {
-             config : &self,
+             config : self,
              from_main,
              to_main
          };

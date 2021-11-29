@@ -128,7 +128,7 @@ impl Default for PulseVolumeConfig {
 
 impl SwayStatusModuleInstance for PulseVolumeConfig {
     fn make_runnable<'p>(&'p self,to_main : Box<dyn MsgModuleToMain + 'p>) -> (Box<dyn SwayStatusModuleRunnable + 'p>, Box<dyn MsgMainToModule + 'p>) {
-        let (runnable, sender_for_main) = crate::runnable::PulseVolumeRunnable::new(&self, to_main);
+        let (runnable, sender_for_main) = crate::runnable::PulseVolumeRunnable::new(self, to_main);
         (Box::new(runnable), Box::new(sender_for_main))
     }
 }
@@ -162,13 +162,11 @@ impl<KeyTypeMetadata : VolumeKeyBackingTypeMetadata> FormatableVolume<KeyTypeMet
         if let Some((_,msg)) = bin_symbol_map.range(..=value_to_match).next_back() {
             Ok(format!("{}{}",label,msg))
         }
+        else if let Some((_,msg)) = bin_symbol_map.iter().next() {
+            Ok(format!("{}{}",label,msg))
+        }
         else {
-            if let Some((_,msg)) = bin_symbol_map.iter().next() {
-                Ok(format!("{}{}",label,msg))
-            }
-            else {
-                Err(FormattingError::EmptyMap{numeric_fallback : Self::format_float_numeric(float, label, 0) })
-            }
+            Err(FormattingError::EmptyMap{numeric_fallback : Self::format_float_numeric(float, label, 0) })
         }
     }
     fn format_float_numeric(float : f32, label : &str, digits : u8) -> String {
