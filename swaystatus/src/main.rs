@@ -14,9 +14,6 @@ use commandline::CommandlineAction;
 #[cfg(test)]
 pub mod test_plugin;
 
-#[global_allocator]
-static GLOBAL : std::alloc::System = std::alloc::System;
-
 fn main() {
     let text_domain = match dirs::data_dir() {
         Some (p) => TextDomain::new("swaystatus").prepend("target").push(p),

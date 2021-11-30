@@ -48,6 +48,9 @@ pub static RUSTC_VERSION : &str = env!("RUSTC_VERSION");
 #[doc(hidden)]
 pub static MODULE_VERSION : &str = env!("CARGO_PKG_VERSION");
 
+#[global_allocator]
+static GLOBAL : std::alloc::System = std::alloc::System;
+
 /// Declares a public export C function that creates your plugin's main object.
 /// parameters are: The plugin's concrete type, and the constructor function for it.
 /// This is blatantly stolen from
