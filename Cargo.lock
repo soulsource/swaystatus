@@ -144,6 +144,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "formatable-float"
+version = "0.1.0"
+dependencies = [
+ "erased-serde",
+ "serde",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -539,6 +547,7 @@ name = "swaystatus-pulse"
 version = "0.1.0"
 dependencies = [
  "erased-serde",
+ "formatable-float",
  "serde",
  "swaystatus-plugin",
 ]

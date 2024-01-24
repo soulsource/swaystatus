@@ -3,7 +3,9 @@
 members = [
 	"swaystatus",
 	"swaystatus-plugin",
+	"formatable-float",
 	"alsa",
 	"clock",
 	"pulse"
 ]
+resolver = "2"

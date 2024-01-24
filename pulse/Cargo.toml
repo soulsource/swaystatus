@@ -10,6 +10,7 @@ edition = "2021"
 swaystatus-plugin = { path = '../swaystatus-plugin', version = '*'}
 serde = { version = "1.0", features = ["derive"] }
 erased-serde = "0.3"
+formatable-float = { path = '../formatable-float', version = '*'}
 
 [lib]
 crate-type = ["cdylib"]

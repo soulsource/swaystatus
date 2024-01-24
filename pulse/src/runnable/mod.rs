@@ -3,6 +3,7 @@ use crate::config::*;
 use swaystatus_plugin::*;
 use crate::communication::*;
 use std::convert::TryFrom;
+use formatable_float::FormattingError;
 
 pub mod pulse;
 use pulse::{Pulse,MainLoopCreationError, PulseContext, PaContextState, SinkHandle, PulseOperation};
