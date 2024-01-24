@@ -508,6 +508,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "swaystatus-alsa"
+version = "0.1.0"
+dependencies = [
+ "erased-serde",
+ "serde",
+ "swaystatus-plugin",
+]
+
+[[package]]
 name = "swaystatus-clock"
 version = "0.1.0"
 dependencies = [

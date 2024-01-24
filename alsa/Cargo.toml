@@ -1,0 +1,15 @@
+[package]
+name = "swaystatus-alsa"
+version = "0.1.0"
+authors = ["Andreas Grois <andi@grois.info>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+swaystatus-plugin = { path = '../swaystatus-plugin', version = '*'}
+serde = { version = "1.0", features = ["derive"] }
+erased-serde = "0.3"
+
+[lib]
+crate-type = ["cdylib"]

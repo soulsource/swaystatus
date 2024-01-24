@@ -3,6 +3,7 @@
 members = [
 	"swaystatus",
 	"swaystatus-plugin",
+	"alsa",
 	"clock",
 	"pulse"
 ]
