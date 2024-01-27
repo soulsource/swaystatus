@@ -1,6 +1,9 @@
 use std::sync::mpsc::*;
 use swaystatus_plugin::*;
 
+pub(crate) mod pipe_chan;
+
+#[repr(C)]
 pub enum MessagesFromMain {
     Quit,
     Refresh
