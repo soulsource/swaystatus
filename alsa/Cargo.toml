@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 swaystatus-plugin = { path = '../swaystatus-plugin', version = '*'}
+formatable-float = { path = '../formatable-float', version = '*'}
 serde = { version = "1.0", features = ["derive"] }
 erased-serde = "0.3"
 libc = "0.2.152"

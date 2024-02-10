@@ -29,6 +29,9 @@ impl Receiver {
             Err(ReceiveError::UnknownError)
         }
     }
+    pub(crate) fn file_handle(&self) -> &FileHandle {
+        &self.handle
+    }
 }
 
 impl Sender {
@@ -98,7 +101,7 @@ pub(crate) fn create_pipe_chan() -> Result<(Sender, Receiver),()> {
     }
 }
 
-struct FileHandle {
+pub(crate) struct FileHandle {
     raw : c_int,
 }
 

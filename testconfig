@@ -47,3 +47,27 @@ UnmuteSymbol = "🔊"
 [Element.General]
 BeforeText = ""
 AfterText = ""
+
+[[Element]]
+Plugin = "AlsaVolume"
+
+[Element.Config]
+device = [100, 101, 102, 97, 117, 108, 116]
+element = [77, 97, 115, 116, 101, 114]
+abstraction = "None"
+sorting = "MuteVolume"
+
+[Element.Config.mute]
+Format = "Symbol"
+Label = ""
+MuteSymbol = "🔇"
+UnmuteSymbol = "🔊"
+
+[Element.Config.volume]
+Format = "Numeric"
+Label = " "
+DecimalDigits = 0
+
+[Element.General]
+BeforeText = ""
+AfterText = ""

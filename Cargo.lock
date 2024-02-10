@@ -531,6 +531,7 @@ version = "0.1.0"
 dependencies = [
  "erased-serde",
  "errno",
+ "formatable-float",
  "libc",
  "serde",
  "swaystatus-plugin",

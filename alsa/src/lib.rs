@@ -16,13 +16,14 @@ impl SwayStatusModule for AlsaVolumePlugin {
             .map(|c| Box::new(c) as Box<dyn SwayStatusModuleInstance>)
     }
     fn get_default_config<'p>(&'p self) -> Box<dyn SwayStatusModuleInstance + 'p> {
-        todo!();
+        Box::new(config::AlsaVolumeConfig::default())
     }
     fn print_help(&self) {
         println!(
 r#"Swaystatus Alsa Volume plugin.
 
-This is a volume display for ALSA. You can either choose a specific device, mixer and element to display, or just show the default output's volume."#
+This is a volume display for ALSA. Currently quite limited, but hey, you're free to extend it. You must set the device and element name in config.
+Blanace is not supported at the moment, just volume of a single element."#
         );
     }
 }
