@@ -27,7 +27,7 @@ Unless you put the libraries and the configuration exactly where this program ex
 
 ## Info for developers
 
-First things first again: Feel free to extend this, PRs are welcome. Hoever, my motivation to work on this tool is limited, so, please keep your expectations low. If you want, feel free to fork and do whatever you like - but, if possible, keep the plugin interface compatible. That way people can easily mix plugins from different forks.
+First things first again: Feel free to extend this, PRs are welcome. However, my motivation to work on this tool is limited, so, please keep your expectations low. If you want, feel free to fork and do whatever you like - but, if possible, keep the plugin interface compatible. That way people can easily mix plugins from different forks.
 
 ### Making a new plugin
 
