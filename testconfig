@@ -52,8 +52,8 @@ AfterText = ""
 Plugin = "AlsaVolume"
 
 [Element.Config]
-device = [100, 101, 102, 97, 117, 108, 116]
-element = [77, 97, 115, 116, 101, 114]
+device = "default"
+element = "Master"
 abstraction = "None"
 sorting = "MuteVolume"
 

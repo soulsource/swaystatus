@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Display, error::Error, ffi::CStr};
+use std::{cell::RefCell, fmt::Display, error::Error, ffi::{CStr, CString}};
 
 use formatable_float::FormattingError;
 use libc::{c_int, c_char, c_uint, c_void, c_long, c_ushort, c_short};
@@ -26,13 +26,22 @@ impl<'r> AlsaVolumeRunnable<'r> {
         //Using C callbacks in Rust is a minefield.
         //However, we can take the easy way out here, namely we only care about a single element, so we can just make a single data field ;-)
         //It still needs to be in a Cell though.
+        let elem_name = match CString::new(&*self.config.element){
+            Ok(s) => s,
+            Err(_) => return Err(AlsaVolumeError::ConfigError),
+        };
+        let device = match CString::new(&*self.config.device){
+            Ok(s) => s,
+            Err(_) => return Err(AlsaVolumeError::ConfigError),
+        };
+
         let elem_scratch_space = RefCell::new(None);
         let mixer_scratch_space = MixerScratchSpace{
-            elem_name: &self.config.element,
+            elem_name: &elem_name,
             elem_scratch: &elem_scratch_space,
         };
         let mixer = open_mixer(0)?;
-        register_selem(mixer.handle, &self.config.device, self.config.abstraction)?;
+        register_selem(mixer.handle, &device, self.config.abstraction)?;
         unsafe { snd_mixer_set_callback(mixer.handle, Some(Self::mixer_callback)) };
         unsafe { snd_mixer_set_callback_private(mixer.handle, &mixer_scratch_space as *const MixerScratchSpace as *const c_void)};
         load_mixer(mixer.handle)?;
@@ -201,6 +210,7 @@ enum AlsaVolumeError{
     MainHungUpWithoutQuit,
     DeviceRemoved,
     EventHandlingError,
+    ConfigError,
 }
 
 impl Display for AlsaVolumeError{
@@ -214,6 +224,7 @@ impl Display for AlsaVolumeError{
             AlsaVolumeError::MainHungUpWithoutQuit => write!(f, "Main thread ended communication without saying goodbye. Debug."),
             AlsaVolumeError::DeviceRemoved => write!(f, "Device removed. Unsupported for now."),
             AlsaVolumeError::EventHandlingError => write!(f, "Failure while handling mixer events. Debug."),
+            AlsaVolumeError::ConfigError => write!(f, "Configuration contains non-ASCI values for device or element."),
         }
     }
 }

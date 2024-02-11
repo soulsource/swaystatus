@@ -1,5 +1,3 @@
-use std::ffi::CString;
-
 use formatable_float::{FormatableFloatValue, KeyBackingTypeMetadata, FormattingError};
 use serde::{Serialize, Deserialize};
 use swaystatus_plugin::*;
@@ -8,8 +6,8 @@ use crate::{runnable::AlsaVolumeRunnable, communication::{SenderForMain, make_se
 
 #[derive(Serialize, Deserialize)]
 pub struct AlsaVolumeConfig{
-    pub(crate) device : CString,
-    pub(crate) element : CString,
+    pub(crate) device : String,
+    pub(crate) element : String,
     pub(crate) abstraction : SElemAbstraction,
     sorting: FieldSorting,
     mute: FormatableMute,
@@ -93,8 +91,8 @@ impl SwayStatusModuleInstance for AlsaVolumeConfig {
 impl Default for AlsaVolumeConfig {
     fn default() -> Self {
         Self {
-            device: CString::new("default").unwrap(),
-            element: CString::new("Master").unwrap(),
+            device: "default".into(),
+            element: "Master".into(),
             abstraction : SElemAbstraction::None,
             volume: FormatableFloatValue::Numeric { label: " ".into(), digits: 0 },
             mute: FormatableMute::Symbol { label : String::new(), mute_symbol : String::from("🔇"), unmute_symbol : String::from("🔊") },
