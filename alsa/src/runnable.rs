@@ -45,10 +45,11 @@ impl<'r> AlsaVolumeRunnable<'r> {
         unsafe { snd_mixer_set_callback(mixer.handle, Some(Self::mixer_callback)) };
         unsafe { snd_mixer_set_callback_private(mixer.handle, &mixer_scratch_space as *const MixerScratchSpace as *const c_void)};
         load_mixer(mixer.handle)?;
+        //send an update right now. Loading the mixer could already have given us data to show.
+        self.send_updated_values_to_main(mixer_scratch_space.elem_scratch.borrow().clone()).expect("Tried to update main thread, but it seems to be gone?");
 
-        let mut should_update_main_even_if_unchanged = true;
         loop {
-
+            let mut should_update_main_even_if_unchanged = false;
             let descriptor_count = unsafe{snd_mixer_poll_descriptors_count(mixer.handle)};
             if descriptor_count < 0 {
                 return Err(AlsaVolumeError::FailedToGetPollDescriptors);
@@ -111,7 +112,6 @@ impl<'r> AlsaVolumeRunnable<'r> {
             if new_values != old_values || should_update_main_even_if_unchanged {
                 self.send_updated_values_to_main(new_values).expect("Tried to update main thread, but it seems to be gone?");
             }
-            should_update_main_even_if_unchanged = false;
         }
     }
 
