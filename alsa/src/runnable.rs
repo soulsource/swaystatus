@@ -1,7 +1,7 @@
 use std::{cell::RefCell, fmt::Display, error::Error, ffi::{CStr, CString}};
 
 use formatable_float::FormattingError;
-use libc::{c_int, c_char, c_uint, c_void, c_long, c_ushort, c_short};
+use libc::{c_int, c_char, c_uint, c_void, c_long, c_ushort, c_short, nfds_t};
 use swaystatus_plugin::*;
 
 use crate::{communication::MessagesFromMainReceiver, config::SElemAbstraction};
@@ -54,25 +54,21 @@ impl<'r> AlsaVolumeRunnable<'r> {
             if descriptor_count < 0 {
                 return Err(AlsaVolumeError::FailedToGetPollDescriptors);
             }
-            let mut descriptors : Vec<libc::pollfd> = std::iter::once(libc::pollfd{ 
-                    fd: self.from_main.file_handle().get_raw(),
-                    events: libc::POLLIN,
-                    revents: 0 
-                })
-                .chain(std::iter::repeat(
-                    libc::pollfd{
-                        fd: 0,
-                        events: 0,
-                        revents: 0,
-                    }
-                ))
-                .take(descriptor_count as usize + 1)
-                .collect();
+            let mut descriptors : Vec<libc::pollfd> = vec![libc::pollfd{
+                fd: 0,
+                events: 0,
+                revents: 0,
+            }; descriptor_count as usize + 1];
+            descriptors[0] = libc::pollfd{ 
+                fd: self.from_main.file_handle().get_raw(),
+                events: libc::POLLIN,
+                revents: 0 
+            };
             let descriptor_count = if descriptor_count > 0 { unsafe {snd_mixer_poll_descriptors(mixer.handle, &mut descriptors[1] , descriptor_count as c_uint)} } else { 0 };
             if descriptor_count < 0 {
                 return Err(AlsaVolumeError::FailedToGetPollDescriptors);
             }
-            let n = unsafe {libc::poll(descriptors.as_mut_ptr(), descriptors.len() as u64, -1)};
+            let n = unsafe {libc::poll(descriptors.as_mut_ptr(),descriptor_count as nfds_t + 1, -1)};
             if n < 0 && n != libc::EINTR {
                 return Err(AlsaVolumeError::UnexpectedPollError);
             }
