@@ -157,21 +157,33 @@ impl<'r> AlsaVolumeRunnable<'r> {
             0
         } else { //could check further to exclude more spurious wake-ups, but for now...
             //we don't do any magic here. Just sum up all channel's values and call it a day.
+            let range = get_db_range(element);
             let (count, volume_sum) = ALL_CHANNELS.iter()
-                .filter_map(|channel| get_volume_for_channel(element, *channel))
-                .fold((0,0), |(c, ov), v| (c+1, ov + v));
-            let average = if count == 0 { None } else { Some(volume_sum / count)};
-            let range = get_volume_range(element);
-            let normalized = average.zip(range).map(|(average, range)| ((average - range.0)*100000) / (range.1 - range.0));
+                .filter_map(|channel| get_db_for_channel(element, *channel))
+                .map(|db| db_to_normalized(db, range.map(|r| r.1).unwrap_or_default()))
+                .fold((0,0_f32), |(c, ov), v| (c+1, ov + v));
+            let average = if count == 0 { None } else { Some(volume_sum / count as f32)};
+            let normalized = average.zip(range).map(|(average, range)| { 
+                if range.0 == SND_CTL_TLV_DB_GAIN_MUTE {
+                    average
+                } else {
+                    let m = db_to_normalized(range.0, range.1);
+                    (average - m)/(1_f32 - m)
+                }
+            });
             let scratch = unsafe{&*(snd_mixer_elem_get_callback_private(element) as *const ElemScratchSpace)};
             let has_mute = unsafe{ snd_mixer_selem_has_playback_switch(element) != 0};
-            let is_mute = if has_mute {
+            let mute = if has_mute {
                 !ALL_CHANNELS.iter().any(|channel| get_switch_for_channel(element, *channel))
             } else { false };
-            *scratch.borrow_mut() = normalized.map(|volume| ElemVolumeInfo{volume : volume as f32 / 100000.0, mute : is_mute});
+            *scratch.borrow_mut() = normalized.map(|volume| ElemVolumeInfo{volume, mute});
             0
         }
     }
+}
+
+fn db_to_normalized(db : c_long, max : c_long) -> f32 {
+    10_f32.powf((db - max) as f32 / 6000_f32)
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -275,10 +287,10 @@ fn register_selem(mixer : SndMixerHandle, device : &CStr, abstraction : SElemAbs
     }
 }
 
-fn get_volume_for_channel(element : SndMixerElemHandle, channel : SndMixerSelemChannelIdT) -> Option<c_long>{
+fn get_db_for_channel(element : SndMixerElemHandle, channel : SndMixerSelemChannelIdT) -> Option<c_long>{
     if unsafe {snd_mixer_selem_has_playback_channel(element, channel) > 0} {
         let mut value : c_long = 0;
-        if unsafe { snd_mixer_selem_get_playback_volume(element, channel, &mut value) == 0}{
+        if unsafe { snd_mixer_selem_get_playback_dB(element, channel, &mut value) == 0}{
             Some(value)
         } else {
             None
@@ -294,10 +306,10 @@ fn get_switch_for_channel(element : SndMixerElemHandle, channel : SndMixerSelemC
     worked == 0 && switch != 0
 }
 
-fn get_volume_range(element : SndMixerElemHandle) -> Option<(c_long, c_long)>{
+fn get_db_range(element : SndMixerElemHandle) -> Option<(c_long, c_long)>{
     let mut min = 0;
     let mut max = 0;
-    if unsafe { snd_mixer_selem_get_playback_volume_range(element, &mut min, &mut max) == 0 } {
+    if unsafe { snd_mixer_selem_get_playback_dB_range(element, &mut min, &mut max) == 0 } {
         Some((min, max))
     } else {
         None
@@ -349,6 +361,7 @@ static ALL_CHANNELS : [SndMixerSelemChannelIdT;9] = [
     SndMixerSelemChannelIdT::RearCenter,
 ];
 
+const SND_CTL_TLV_DB_GAIN_MUTE : c_long = -9999999;
 
 type SndMixerCallbackT = extern "C" fn(SndMixerHandle, c_uint, SndMixerElemHandle) -> c_int;
 type SndMixerElemCallbackT = extern "C" fn(SndMixerElemHandle, c_uint) -> c_int;
@@ -381,10 +394,10 @@ extern "C" {
 
     //int snd_mixer_selem_has_playback_channel 	( 	snd_mixer_elem_t *  	elem,		snd_mixer_selem_channel_id_t  	channel 	) 	
     fn snd_mixer_selem_has_playback_channel(element : SndMixerElemHandle, channel : SndMixerSelemChannelIdT) -> c_int;
-    //int snd_mixer_selem_get_playback_volume 	( 	snd_mixer_elem_t *  	elem,		snd_mixer_selem_channel_id_t  	channel,		long *  	value 	) 	
-    fn snd_mixer_selem_get_playback_volume(element : SndMixerElemHandle, channel : SndMixerSelemChannelIdT, value : *mut c_long) -> c_int;
-    //int snd_mixer_selem_get_playback_volume_range 	( 	snd_mixer_elem_t *  	elem,		long *  	min,		long *  	max 	) 	
-    fn snd_mixer_selem_get_playback_volume_range(element : SndMixerElemHandle, min: *mut c_long, max : *mut c_long) -> c_int;
+    //int snd_mixer_selem_get_playback_dB 	( 	snd_mixer_elem_t *  	elem,		snd_mixer_selem_channel_id_t  	channel,		long *  	value 	) 	
+    fn snd_mixer_selem_get_playback_dB(element : SndMixerElemHandle, channel : SndMixerSelemChannelIdT, value : *mut c_long) -> c_int;
+    //int snd_mixer_selem_get_playback_dB_range 	( 	snd_mixer_elem_t *  	elem,		long *  	min,		long *  	max 	) 	
+    fn snd_mixer_selem_get_playback_dB_range(element : SndMixerElemHandle, min: *mut c_long, max : *mut c_long) -> c_int;
 
     //int snd_mixer_selem_has_playback_switch 	( 	snd_mixer_elem_t *  	elem	) 	
     fn snd_mixer_selem_has_playback_switch(element : SndMixerElemHandle) -> c_int;
