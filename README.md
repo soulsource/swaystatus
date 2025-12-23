@@ -3,6 +3,10 @@
 This is a small status bar application that I write/maintain because I use it myself. You probably do not want to use this.
 The only reason I published it is because I wanted to have it available somewhere online, for reference.
 
+# MOVED
+
+This repo is no longer updated. The current version can be found at [https://git.grois.info/swaystatus/](https://git.grois.info/swaystatus/).
+
 ## Information for users
 
 Let me start with the important part: For most users this program is not a good choice. Mainly because it is rather limited feature-wise, and I have no plans to extend it beyond my own personal needs.
